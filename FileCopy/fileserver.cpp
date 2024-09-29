@@ -6,16 +6,19 @@
 #include <sstream> 
 #include <iomanip> 
 #include <openssl/sha.h>  // For SHA1
+#include <vector>
 
 
 using namespace std;
 using namespace C150NETWORK;
 
 string make_hash(string file_name);
+vector<string> split(const string &str, char delimiter);
 C150DgmSocket* createSocket(int nastiness);
 void checkAndPrintMessage(ssize_t readlen, char *msg, ssize_t bufferlen);
 void processIncomingMessages(C150DgmSocket *sock, const string &programName);
 bool sendMessageWithRetries(C150DgmSocket *sock, const string &msg, int maxRetries);
+std::vector<std::string> split(const std::string& s, const std::string& delimiter);
 
 const int maxRetries = 5;
 
@@ -76,9 +79,9 @@ C150DgmSocket* createSocket(int nastiness) {
 
 // Function to process incoming messages and handle responses
 void processIncomingMessages(C150DgmSocket *sock, const string &programName) {
-    cout << "Inside processIncomingMessages\n";
     ssize_t readlen;
     char incomingMessage[512];
+    string return_msg;
 
     while (1) {
         readlen = sock->read(incomingMessage, sizeof(incomingMessage) - 1);
@@ -89,22 +92,26 @@ void processIncomingMessages(C150DgmSocket *sock, const string &programName) {
         incomingMessage[readlen] = '\0';  // Ensure null termination
         
         string incoming(incomingMessage);
+        cout << incomingMessage << endl;
     
-        // Calculate the number of characters before the space
-        size_t spacePos = incoming.find(' ');
-        // Copy the characters before the space into firstToken
-        string typeOfRead = incoming.substr(0, spacePos);
-        cout << typeOfRead << endl;
+        vector<string> arguments = split(incoming, ' ');
 
-        string incomingFile = incoming.substr(spacePos + 1);
+        if (arguments[0] == "CHECK" && arguments.size() == 2) {
+            string file_name = arguments[1];
+            string file_path = "TARGET/" + file_name;
+            string hash = make_hash(file_path);
 
-        string filePath = "TARGET/" + string(incomingFile);
+            return_msg = file_name + " " + hash;
 
-        string hash = make_hash(filePath);
+            sock->write(return_msg.c_str(), return_msg.length() + 1);  // +1 includes the null terminator
+        } else if (arguments[0] == "EQUAL" && arguments.size() == 3) {
+            // cout << arguments[1] << " " << arguments[2] << endl;
 
-        string msg = incomingFile + " " + hash;
-
-        sock->write(msg.c_str(), strlen(msg.c_str()) + 1); // +1 includes the null terminator
+            return_msg = arguments[1]  + " " + arguments[2]; //TODO: last argyuments ends in a \n i think
+            sock->write(return_msg.c_str(), return_msg.length() + 1);
+        } else {
+            cerr << "Error: invalid message.\n";
+        }
 
         // c150debug->printf(C150APPLICATION, "Returned from write, doing read()");
 
@@ -151,17 +158,35 @@ bool sendMessageWithRetries(C150DgmSocket *sock, const string &msg, int maxRetri
     return messageReceived;
 }
 
-// string print_hash(unsigned char obuf[20]) {
-//     ostringstream oss;
-//     for (int i = 0; i < 20; i++) {
-//         oss << setw(2) << setfill('0') << hex << (unsigned int)obuf[i];
+// std::vector<std::string> split(const std::string& s, const std::string& delimiter) {
+//     std::vector<std::string> tokens;
+//     size_t pos = 0;
+//     std::string token;
+//     while ((pos = s.find(delimiter)) != std::string::npos) {
+//         token = s.substr(0, pos);
+//         tokens.push_back(token);
+//         s.erase(0, pos + delimiter.length());
 //     }
-//     return oss.str();
+//     tokens.push_back(s);
+
+//     return tokens;
 // }
+
+vector<string> split(const string &str, char delimiter) {
+    vector<string> tokens;
+    istringstream stream(str);
+    string token;
+    
+    while (getline(stream, token, delimiter)) {
+        tokens.push_back(token);
+    }
+    
+    return tokens;
+}
 
 string make_hash(string file_path) {
     // Open the file
-    cout << "File path in hash func: " << file_path << endl;
+    // cout << "File path in hash func: " << file_path << endl;
     std::ifstream t(file_path, std::ios::binary);
     if (!t.is_open()) {
         throw std::runtime_error("Unable to open file: " + file_path);

@@ -15,6 +15,7 @@
         "array": "cpp",
         "sstream": "cpp",
         "ios": "cpp",
-        "iomanip": "cpp"
+        "iomanip": "cpp",
+        "new": "cpp"
     }
 }

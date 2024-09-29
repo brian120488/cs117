@@ -7,7 +7,7 @@
 #include <openssl/sha.h>
 #include <dirent.h>
 #include <sys/stat.h>
-#include "c150dgmsocket.h"
+#include "c150nastydgmsocket.h"
 
 
 using namespace std;
@@ -40,41 +40,39 @@ int main(int argc, char *argv[]) {
     }
 
     char* server = argv[1];
-    // int network_nastiness = atoi(argv[2]);
+    int network_nastiness = atoi(argv[2]);
     // int file_nastiness = atoi(argv[3]);
     char* srcdir = argv[4];
 
     // example for gradelog output
     // *GRADING << "File: <name>, beginning transmission, attempt <attempt>" endl;
     try {
+        C150DgmSocket *sock = new C150NastyDgmSocket(network_nastiness);
+        sock -> setServerName(server);  
+        sock -> turnOnTimeouts(50);
+
+        char incomingMessage[512];
+        ssize_t readlen;
         for (const auto& entry : fs::directory_iterator(srcdir)) {
             string file_name = entry.path().filename().string();
             string hash = make_hash(entry.path().string());
-  
-            C150DgmSocket *sock = new C150DgmSocket();
-            sock -> setServerName(server);  
-            sock -> turnOnTimeouts(1000);
 
-            char incomingMessage[512];
-            ssize_t readlen;
             try {
                 readlen = write_to_server_and_wait(sock, "CHECK " + file_name, incomingMessage);
+
                 string incoming(incomingMessage);
                 size_t spacePos = incoming.find(' ');
-                string typeOfRead = incoming.substr(0, spacePos);
+                string server_file_name = incoming.substr(0, spacePos);
                 string incoming_hash = incoming.substr(spacePos + 1);
 
-                checkAndPrintMessage(readlen, incomingMessage, 512);
-                if (incoming_hash == hash) {
-                    cout << "THE SAME!" << endl;
-                    // readlen = write_to_server_and_wait(sock, "THE SAME!", incomingMessage);
-                    // checkAndPrintMessage(readlen, incomingMessage, 512);
-                }
-                else{
-                    cout << "NOT THE SAME" << endl;
-                    // readlen = write_to_server_and_wait(sock, "NOT THE SAME!", incomingMessage);
-                    // checkAndPrintMessage(readlen, incomingMessage, sizeof(incomingMessage));
-                }
+                string msg = "EQUAL " + file_name;
+                msg += (incoming_hash == hash) ? " 1" :  " 0";
+                readlen = write_to_server_and_wait(sock, msg, incomingMessage);
+                // TODO: process server's acknowledgment
+
+
+                readlen += 1; //cuz no reaosn
+                cout << incomingMessage;
             }
             catch (C150NetworkException& e) {
                 c150debug->printf(C150ALWAYSLOG,"Caught C150NetworkException: %s\n",
@@ -102,12 +100,15 @@ ssize_t write_to_server_and_wait(C150DgmSocket *sock, string message, char *inco
     for (int retries = 0; retries < maxRetries && !messageReceived; retries++) {
         sock->write(message.c_str(), message.length() + 1); // +1 includes the null terminator
         readlen = sock->read(incomingMessage, 512);
-
-        if (!sock->timedout()) {
-            messageReceived = true;
+        if (readlen == 0) continue;
+        
+        incomingMessage[readlen] = '\0';
+        while (!sock->timedout()) {
+            readlen = sock -> read(incomingMessage, 512);
         }
+        messageReceived = true;
 
-        // TODO: contineu reading for packets?
+        // TODO: continue reading for packets?
     }
     return readlen;
 }

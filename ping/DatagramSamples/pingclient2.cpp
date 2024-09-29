@@ -132,7 +132,7 @@ main(int argc, char *argv[]) {
         sock -> setServerName(argv[serverArg]);  
 
         // Wait 1 second for each read; changed from 3 seconds to 1
-        sock -> turnOnTimeouts(1000);
+        sock -> turnOnTimeouts(500);
 
         try {
             int tries = 5;
