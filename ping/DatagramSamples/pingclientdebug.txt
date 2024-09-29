@@ -1,0 +1,192 @@
+09/25/2024 21:12:50.008108 ./pingclient2: Creating C150DgmSocket
+09/25/2024 21:12:50.012238 ./pingclient2: ./pingclient2: Writing message: "f"
+09/25/2024 21:12:50.012263 ./pingclient2: C150DgmSocket::write: attempting to send packet with len=2 |f.|
+09/25/2024 21:12:50.012302 ./pingclient2: C150DgmSocket::write: Success writing packet with len=2 |f.|
+09/25/2024 21:12:50.012319 ./pingclient2: ./pingclient2: Returned from write, doing read()
+09/25/2024 21:12:51.027548 ./pingclient2: C150DgmSocket::read: returning timeout to application
+09/25/2024 21:12:51.027590 ./pingclient2: ./pingclient2: Writing message: "f"
+09/25/2024 21:12:51.027613 ./pingclient2: C150DgmSocket::write: attempting to send packet with len=2 |f.|
+09/25/2024 21:12:51.027685 ./pingclient2: C150DgmSocket::write: Success writing packet with len=2 |f.|
+09/25/2024 21:12:51.027702 ./pingclient2: ./pingclient2: Returned from write, doing read()
+09/25/2024 21:12:52.051568 ./pingclient2: C150DgmSocket::read: returning timeout to application
+09/25/2024 21:12:52.051609 ./pingclient2: ./pingclient2: Writing message: "f"
+09/25/2024 21:12:52.051632 ./pingclient2: C150DgmSocket::write: attempting to send packet with len=2 |f.|
+09/25/2024 21:12:52.051700 ./pingclient2: C150DgmSocket::write: Success writing packet with len=2 |f.|
+09/25/2024 21:12:52.051718 ./pingclient2: ./pingclient2: Returned from write, doing read()
+09/25/2024 21:12:52.052085 ./pingclient2: C150DgmSocket::read: successful read with len=50 |You said f. Don't you know how to play ping pong?.|
+09/25/2024 21:12:52.052103 ./pingclient2: PRINTING RESPONSE: Response received is "You said f. Don't you know how to play ping pong?"
+
+09/25/2024 21:13:25.372126 ./pingclient2: Creating C150DgmSocket
+09/25/2024 21:13:25.373043 ./pingclient2: ./pingclient2: Writing message: "frh"
+09/25/2024 21:13:25.373068 ./pingclient2: C150DgmSocket::write: attempting to send packet with len=4 |frh.|
+09/25/2024 21:13:25.373116 ./pingclient2: C150DgmSocket::write: Success writing packet with len=4 |frh.|
+09/25/2024 21:13:25.373137 ./pingclient2: ./pingclient2: Returned from write, doing read()
+09/25/2024 21:13:26.419536 ./pingclient2: C150DgmSocket::read: returning timeout to application
+09/25/2024 21:13:26.419582 ./pingclient2: ./pingclient2: Writing message: "frh"
+09/25/2024 21:13:26.419606 ./pingclient2: C150DgmSocket::write: attempting to send packet with len=4 |frh.|
+09/25/2024 21:13:26.419691 ./pingclient2: C150DgmSocket::write: Success writing packet with len=4 |frh.|
+09/25/2024 21:13:26.419710 ./pingclient2: ./pingclient2: Returned from write, doing read()
+09/25/2024 21:13:26.420060 ./pingclient2: C150DgmSocket::read: successful read with len=52 |You said frh. Don't you know how to play ping pong?.|
+09/25/2024 21:13:26.420078 ./pingclient2: PRINTING RESPONSE: Response received is "You said frh. Don't you know how to play ping pong?"
+
+09/25/2024 21:16:56.157673 ./pingclient2: Creating C150DgmSocket
+09/25/2024 21:16:56.160349 ./pingclient2: ./pingclient2: Writing message: "fjeiw"
+09/25/2024 21:16:56.160370 ./pingclient2: C150DgmSocket::write: attempting to send packet with len=6 |fjeiw.|
+09/25/2024 21:16:56.160406 ./pingclient2: C150DgmSocket::write: Success writing packet with len=6 |fjeiw.|
+09/25/2024 21:16:56.160423 ./pingclient2: ./pingclient2: Returned from write, doing read()
+09/25/2024 21:16:56.161471 ./pingclient2: C150DgmSocket::read: successful read with len=54 |You said fjeiw. Don't you know how to play ping pong?.|
+09/25/2024 21:16:56.161490 ./pingclient2: PRINTING RESPONSE: Response received is "You said fjeiw. Don't you know how to play ping pong?"
+
+09/25/2024 21:17:00.790127 ./pingclient2: Creating C150DgmSocket
+09/25/2024 21:17:00.791017 ./pingclient2: ./pingclient2: Writing message: "ifjpwe"
+09/25/2024 21:17:00.791038 ./pingclient2: C150DgmSocket::write: attempting to send packet with len=7 |ifjpwe.|
+09/25/2024 21:17:00.791071 ./pingclient2: C150DgmSocket::write: Success writing packet with len=7 |ifjpwe.|
+09/25/2024 21:17:00.791088 ./pingclient2: ./pingclient2: Returned from write, doing read()
+09/25/2024 21:17:00.791470 ./pingclient2: C150DgmSocket::read: successful read with len=55 |You said ifjpwe. Don't you know how to play ping pong?.|
+09/25/2024 21:17:00.791489 ./pingclient2: PRINTING RESPONSE: Response received is "You said ifjpwe. Don't you know how to play ping pong?"
+
+09/25/2024 21:17:01.934781 ./pingclient2: Creating C150DgmSocket
+09/25/2024 21:17:01.935621 ./pingclient2: ./pingclient2: Writing message: "xpifej"
+09/25/2024 21:17:01.935642 ./pingclient2: C150DgmSocket::write: attempting to send packet with len=7 |xpifej.|
+09/25/2024 21:17:01.935676 ./pingclient2: C150DgmSocket::write: Success writing packet with len=7 |xpifej.|
+09/25/2024 21:17:01.935704 ./pingclient2: ./pingclient2: Returned from write, doing read()
+09/25/2024 21:17:01.936066 ./pingclient2: C150DgmSocket::read: successful read with len=52 |You said frh. Don't you know how to play ping pong?.|
+09/25/2024 21:17:01.936085 ./pingclient2: PRINTING RESPONSE: Response received is "You said frh. Don't you know how to play ping pong?"
+
+09/25/2024 21:17:02.979665 ./pingclient2: Creating C150DgmSocket
+09/25/2024 21:17:02.980526 ./pingclient2: ./pingclient2: Writing message: "xjwpei"
+09/25/2024 21:17:02.980547 ./pingclient2: C150DgmSocket::write: attempting to send packet with len=7 |xjwpei.|
+09/25/2024 21:17:02.980585 ./pingclient2: C150DgmSocket::write: Success writing packet with len=7 |xjwpei.|
+09/25/2024 21:17:02.980603 ./pingclient2: ./pingclient2: Returned from write, doing read()
+09/25/2024 21:17:02.980970 ./pingclient2: C150DgmSocket::read: successful read with len=55 |You said xjwpei. Don't you know how to play ping pong?.|
+09/25/2024 21:17:02.980989 ./pingclient2: PRINTING RESPONSE: Response received is "You said xjwpei. Don't you know how to play ping pong?"
+
+09/25/2024 21:17:04.204578 ./pingclient2: Creating C150DgmSocket
+09/25/2024 21:17:04.205466 ./pingclient2: ./pingclient2: Writing message: "nvreo"
+09/25/2024 21:17:04.205487 ./pingclient2: C150DgmSocket::write: attempting to send packet with len=6 |nvreo.|
+09/25/2024 21:17:04.205542 ./pingclient2: C150DgmSocket::write: Success writing packet with len=6 |nvreo.|
+09/25/2024 21:17:04.205560 ./pingclient2: ./pingclient2: Returned from write, doing read()
+09/25/2024 21:17:04.205954 ./pingclient2: C150DgmSocket::read: successful read with len=54 |You said nvreo. Don't you know how to play ping pong?.|
+09/25/2024 21:17:04.205973 ./pingclient2: PRINTING RESPONSE: Response received is "You said nvreo. Don't you know how to play ping pong?"
+
+09/25/2024 21:17:05.388539 ./pingclient2: Creating C150DgmSocket
+09/25/2024 21:17:05.389387 ./pingclient2: ./pingclient2: Writing message: "pxqow"
+09/25/2024 21:17:05.389408 ./pingclient2: C150DgmSocket::write: attempting to send packet with len=6 |pxqow.|
+09/25/2024 21:17:05.389470 ./pingclient2: C150DgmSocket::write: Success writing packet with len=6 |pxqow.|
+09/25/2024 21:17:05.389489 ./pingclient2: ./pingclient2: Returned from write, doing read()
+09/25/2024 21:17:06.451542 ./pingclient2: C150DgmSocket::read: returning timeout to application
+09/25/2024 21:17:06.451583 ./pingclient2: ./pingclient2: Writing message: "pxqow"
+09/25/2024 21:17:06.451607 ./pingclient2: C150DgmSocket::write: attempting to send packet with len=6 |pxqow.|
+09/25/2024 21:17:06.451686 ./pingclient2: C150DgmSocket::write: Success writing packet with len=6 |pxqow.|
+09/25/2024 21:17:06.451706 ./pingclient2: ./pingclient2: Returned from write, doing read()
+09/25/2024 21:17:06.452162 ./pingclient2: C150DgmSocket::read: successful read with len=54 |You said pxqow. Don't you know how to play ping pong?.|
+09/25/2024 21:17:06.452181 ./pingclient2: PRINTING RESPONSE: Response received is "You said pxqow. Don't you know how to play ping pong?"
+
+09/25/2024 21:17:08.301066 ./pingclient2: Creating C150DgmSocket
+09/25/2024 21:17:08.301890 ./pingclient2: ./pingclient2: Writing message: "pokcfqop"
+09/25/2024 21:17:08.301911 ./pingclient2: C150DgmSocket::write: attempting to send packet with len=9 |pokcfqop.|
+09/25/2024 21:17:08.301957 ./pingclient2: C150DgmSocket::write: Success writing packet with len=9 |pokcfqop.|
+09/25/2024 21:17:08.301986 ./pingclient2: ./pingclient2: Returned from write, doing read()
+09/25/2024 21:17:08.302376 ./pingclient2: C150DgmSocket::read: successful read with len=57 |You said pokcfqop. Don't you know how to play ping pong?.|
+09/25/2024 21:17:08.302395 ./pingclient2: PRINTING RESPONSE: Response received is "You said pokcfqop. Don't you know how to play ping pong?"
+
+09/25/2024 21:17:12.548398 ./pingclient2: Creating C150DgmSocket
+09/25/2024 21:17:12.549251 ./pingclient2: ./pingclient2: Writing message: "ocwpk"
+09/25/2024 21:17:12.549271 ./pingclient2: C150DgmSocket::write: attempting to send packet with len=6 |ocwpk.|
+09/25/2024 21:17:12.549309 ./pingclient2: C150DgmSocket::write: Success writing packet with len=6 |ocwpk.|
+09/25/2024 21:17:12.549331 ./pingclient2: ./pingclient2: Returned from write, doing read()
+09/25/2024 21:17:12.549668 ./pingclient2: C150DgmSocket::read: successful read with len=54 |You said ocwpk. Don't you know how to play ping pong?.|
+09/25/2024 21:17:12.549686 ./pingclient2: PRINTING RESPONSE: Response received is "You said ocwpk. Don't you know how to play ping pong?"
+
+09/25/2024 21:17:13.744515 ./pingclient2: Creating C150DgmSocket
+09/25/2024 21:17:13.745361 ./pingclient2: ./pingclient2: Writing message: "qxjow"
+09/25/2024 21:17:13.745382 ./pingclient2: C150DgmSocket::write: attempting to send packet with len=6 |qxjow.|
+09/25/2024 21:17:13.745428 ./pingclient2: C150DgmSocket::write: Success writing packet with len=6 |qxjow.|
+09/25/2024 21:17:13.745469 ./pingclient2: ./pingclient2: Returned from write, doing read()
+09/25/2024 21:17:13.745769 ./pingclient2: C150DgmSocket::read: successful read with len=54 |You said qxjow. Don't you know how to play ping pong?.|
+09/25/2024 21:17:13.745788 ./pingclient2: PRINTING RESPONSE: Response received is "You said qxjow. Don't you know how to play ping pong?"
+
+09/25/2024 21:17:14.918399 ./pingclient2: Creating C150DgmSocket
+09/25/2024 21:17:14.919270 ./pingclient2: ./pingclient2: Writing message: "xnfiqeqi"
+09/25/2024 21:17:14.919290 ./pingclient2: C150DgmSocket::write: attempting to send packet with len=9 |xnfiqeqi.|
+09/25/2024 21:17:14.919340 ./pingclient2: C150DgmSocket::write: Success writing packet with len=9 |xnfiqeqi.|
+09/25/2024 21:17:14.919357 ./pingclient2: ./pingclient2: Returned from write, doing read()
+09/25/2024 21:17:15.923632 ./pingclient2: C150DgmSocket::read: returning timeout to application
+09/25/2024 21:17:15.923672 ./pingclient2: ./pingclient2: Writing message: "xnfiqeqi"
+09/25/2024 21:17:15.923696 ./pingclient2: C150DgmSocket::write: attempting to send packet with len=9 |xnfiqeqi.|
+09/25/2024 21:17:15.923759 ./pingclient2: C150DgmSocket::write: Success writing packet with len=9 |xnfiqeqi.|
+09/25/2024 21:17:15.923777 ./pingclient2: ./pingclient2: Returned from write, doing read()
+09/25/2024 21:17:16.947576 ./pingclient2: C150DgmSocket::read: returning timeout to application
+09/25/2024 21:17:16.947619 ./pingclient2: ./pingclient2: Writing message: "xnfiqeqi"
+09/25/2024 21:17:16.947645 ./pingclient2: C150DgmSocket::write: attempting to send packet with len=9 |xnfiqeqi.|
+09/25/2024 21:17:16.947720 ./pingclient2: C150DgmSocket::write: Success writing packet with len=9 |xnfiqeqi.|
+09/25/2024 21:17:16.947739 ./pingclient2: ./pingclient2: Returned from write, doing read()
+09/25/2024 21:17:16.948115 ./pingclient2: C150DgmSocket::read: successful read with len=57 |You said xnfiqeqi. Don't you know how to play ping pong?.|
+09/25/2024 21:17:16.948133 ./pingclient2: PRINTING RESPONSE: Response received is "You said xnfiqeqi. Don't you know how to play ping pong?"
+
+09/25/2024 21:17:18.643422 ./pingclient2: Creating C150DgmSocket
+09/25/2024 21:17:18.644627 ./pingclient2: ./pingclient2: Writing message: "xjfeiwjfeiwq"
+09/25/2024 21:17:18.644649 ./pingclient2: C150DgmSocket::write: attempting to send packet with len=13 |xjfeiwjfeiwq.|
+09/25/2024 21:17:18.644689 ./pingclient2: C150DgmSocket::write: Success writing packet with len=13 |xjfeiwjfeiwq.|
+09/25/2024 21:17:18.644707 ./pingclient2: ./pingclient2: Returned from write, doing read()
+09/25/2024 21:17:19.699550 ./pingclient2: C150DgmSocket::read: returning timeout to application
+09/25/2024 21:17:19.699599 ./pingclient2: ./pingclient2: Writing message: "xjfeiwjfeiwq"
+09/25/2024 21:17:19.699624 ./pingclient2: C150DgmSocket::write: attempting to send packet with len=13 |xjfeiwjfeiwq.|
+09/25/2024 21:17:19.699691 ./pingclient2: C150DgmSocket::write: Success writing packet with len=13 |xjfeiwjfeiwq.|
+09/25/2024 21:17:19.699709 ./pingclient2: ./pingclient2: Returned from write, doing read()
+09/25/2024 21:17:19.700029 ./pingclient2: C150DgmSocket::read: successful read with len=61 |You said xjfeiwjfeiwq. Don't you know how to play ping pong?.|
+09/25/2024 21:17:19.700048 ./pingclient2: PRINTING RESPONSE: Response received is "You said xjfeiwjfeiwq. Don't you know how to play ping pong?"
+
+09/25/2024 21:19:07.109568 ./pingclient2: Creating C150DgmSocket
+09/25/2024 21:19:07.113467 ./pingclient2: ./pingclient2: Writing message: "jiji"
+09/25/2024 21:19:07.113488 ./pingclient2: C150DgmSocket::write: attempting to send packet with len=5 |jiji.|
+09/25/2024 21:19:07.113529 ./pingclient2: C150DgmSocket::write: Success writing packet with len=5 |jiji.|
+09/25/2024 21:19:07.113551 ./pingclient2: ./pingclient2: Returned from write, doing read()
+09/25/2024 21:19:07.114499 ./pingclient2: C150DgmSocket::read: successful read with len=53 |You said jiji. Don't you know how to play ping pong?.|
+09/25/2024 21:19:07.114518 ./pingclient2: PRINTING RESPONSE: Response received is "You said jiji. Don't you know how to play ping pong?"
+
+09/25/2024 21:19:08.794980 ./pingclient2: Creating C150DgmSocket
+09/25/2024 21:19:08.798336 ./pingclient2: ./pingclient2: Writing message: "jjojoj"
+09/25/2024 21:19:08.798361 ./pingclient2: C150DgmSocket::write: attempting to send packet with len=7 |jjojoj.|
+09/25/2024 21:19:08.798409 ./pingclient2: C150DgmSocket::write: Success writing packet with len=7 |jjojoj.|
+09/25/2024 21:19:08.798456 ./pingclient2: ./pingclient2: Returned from write, doing read()
+09/25/2024 21:19:08.798750 ./pingclient2: C150DgmSocket::read: successful read with len=55 |You said jjojoj. Don't you know how to play ping pong?.|
+09/25/2024 21:19:08.798769 ./pingclient2: PRINTING RESPONSE: Response received is "You said jjojoj. Don't you know how to play ping pong?"
+
+09/25/2024 21:19:10.407698 ./pingclient2: Creating C150DgmSocket
+09/25/2024 21:19:10.408559 ./pingclient2: ./pingclient2: Writing message: "njnijiji"
+09/25/2024 21:19:10.408588 ./pingclient2: C150DgmSocket::write: attempting to send packet with len=9 |njnijiji.|
+09/25/2024 21:19:10.408636 ./pingclient2: C150DgmSocket::write: Success writing packet with len=9 |njnijiji.|
+09/25/2024 21:19:10.408663 ./pingclient2: ./pingclient2: Returned from write, doing read()
+09/25/2024 21:19:10.409000 ./pingclient2: C150DgmSocket::read: successful read with len=61 |You said xjfeiwjfeiwq. Don't you know how to play ping pong?.|
+09/25/2024 21:19:10.409019 ./pingclient2: PRINTING RESPONSE: Response received is "You said xjfeiwjfeiwq. Don't you know how to play ping pong?"
+
+09/25/2024 21:19:12.983817 ./pingclient2: Creating C150DgmSocket
+09/25/2024 21:19:12.984669 ./pingclient2: ./pingclient2: Writing message: "ononomo"
+09/25/2024 21:19:12.984691 ./pingclient2: C150DgmSocket::write: attempting to send packet with len=8 |ononomo.|
+09/25/2024 21:19:12.984728 ./pingclient2: C150DgmSocket::write: Success writing packet with len=8 |ononomo.|
+09/25/2024 21:19:12.984745 ./pingclient2: ./pingclient2: Returned from write, doing read()
+09/25/2024 21:19:12.985066 ./pingclient2: C150DgmSocket::read: successful read with len=56 |You said ononomo. Don't you know how to play ping pong?.|
+09/25/2024 21:19:12.985085 ./pingclient2: PRINTING RESPONSE: Response received is "You said ononomo. Don't you know how to play ping pong?"
+
+09/25/2024 21:19:15.300720 ./pingclient2: Creating C150DgmSocket
+09/25/2024 21:19:15.301632 ./pingclient2: ./pingclient2: Writing message: "momomomo"
+09/25/2024 21:19:15.301653 ./pingclient2: C150DgmSocket::write: attempting to send packet with len=9 |momomomo.|
+09/25/2024 21:19:15.301703 ./pingclient2: C150DgmSocket::write: Success writing packet with len=9 |momomomo.|
+09/25/2024 21:19:15.301721 ./pingclient2: ./pingclient2: Returned from write, doing read()
+09/25/2024 21:19:15.302047 ./pingclient2: C150DgmSocket::read: successful read with len=57 |You said momomomo. Don't you know how to play ping pong?.|
+09/25/2024 21:19:15.302065 ./pingclient2: PRINTING RESPONSE: Response received is "You said momomomo. Don't you know how to play ping pong?"
+
+09/25/2024 21:19:16.531294 ./pingclient2: Creating C150DgmSocket
+09/25/2024 21:19:16.532213 ./pingclient2: ./pingclient2: Writing message: "noefqiofen"
+09/25/2024 21:19:16.532238 ./pingclient2: C150DgmSocket::write: attempting to send packet with len=11 |noefqiofen.|
+09/25/2024 21:19:16.532277 ./pingclient2: C150DgmSocket::write: Success writing packet with len=11 |noefqiofen.|
+09/25/2024 21:19:16.532294 ./pingclient2: ./pingclient2: Returned from write, doing read()
+09/25/2024 21:19:17.587590 ./pingclient2: C150DgmSocket::read: returning timeout to application
+09/25/2024 21:19:17.587632 ./pingclient2: ./pingclient2: Writing message: "noefqiofen"
+09/25/2024 21:19:17.587662 ./pingclient2: C150DgmSocket::write: attempting to send packet with len=11 |noefqiofen.|
+09/25/2024 21:19:17.587729 ./pingclient2: C150DgmSocket::write: Success writing packet with len=11 |noefqiofen.|
+09/25/2024 21:19:17.587747 ./pingclient2: ./pingclient2: Returned from write, doing read()
+09/25/2024 21:19:17.588229 ./pingclient2: C150DgmSocket::read: successful read with len=59 |You said noefqiofen. Don't you know how to play ping pong?.|
+09/25/2024 21:19:17.588248 ./pingclient2: PRINTING RESPONSE: Response received is "You said noefqiofen. Don't you know how to play ping pong?"
+

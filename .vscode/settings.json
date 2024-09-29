@@ -1,0 +1,20 @@
+{
+    "files.associations": {
+        "README": "plaintext",
+        "istream": "cpp",
+        "fstream": "cpp",
+        "iosfwd": "cpp",
+        "stdexcept": "cpp",
+        "string": "cpp",
+        "filesystem": "cpp",
+        "ostream": "cpp",
+        "exception": "cpp",
+        "__locale": "cpp",
+        "string_view": "cpp",
+        "__string": "cpp",
+        "array": "cpp",
+        "sstream": "cpp",
+        "ios": "cpp",
+        "iomanip": "cpp"
+    }
+}

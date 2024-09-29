@@ -1,0 +1,198 @@
+<!DOCTYPE HTML>
+<!-- 
+ **********************************************************
+
+             TUFTS CS 117 HOMEWORK ASSIGNMENT
+
+        Fill in your name, e-mail and answers to questions
+        in the sections provided below.
+
+          All questions are marked up: <li class="q">
+          All answers are marked up:   <li class="a">
+
+
+     PLEASE DO NOT MODIFY ANY THING OTHER THAN THE 
+     NAME, E-MAIL, AND ANSWER FIELDS (you may also add
+     css declarations in the <head> if you need them,
+     but usually you won't.
+
+ **********************************************************
+ -->
+
+
+<html lang="en">
+<head>
+<meta charset="utf-8"> 
+<title>Questions for: Tufts CS 117 Assignment Reading Assignment &#8212; Naming (Part I)</title>
+<link rel="stylesheet" type="text/css" href="https://www.cs.tufts.edu/comp/117/style/homework.css" >
+</head>
+
+<body class="homework">
+
+
+<!-- ******************************************************
+	   YOU MUST FILL IN YOUR NAME, UTLN AND EMAIL BELOW!!
+         (You may copy this from an earlier assignment
+                         if you like)
+
+     ****************************************************** -->
+
+
+<div class="student">
+<p>
+<span class="label">Student name: </span>
+Brian Yang
+<br>
+
+<span class="label">LOGIN: </span>
+byang05
+<br>
+
+<span class="label">E-mail: </span>
+<!-- DON'T FORGET UP UPDATE THE MAILTO: URI BELOW ALONG WITH
+     YOUR EMAIL IN THE ANCHOR.  IT SHOULD LOOK LIKE:
+ <a href="mailto:lady.gaga@cs.tufts.edu">lady.gaga@cs.tufts.edu</a>
+--> 
+
+<a href="mailto:brian.yang@tufts.edu">brian.yang@tufts.edu</a>
+<br>
+</p>
+</div>
+
+
+
+
+
+<div class="UpperLeftHeader">
+<p>Tufts CS 117 (Fall 2024):
+<br>
+Internet-scale Distributed Systems
+</p>
+</div>
+
+
+<!-- - - - - - - - - - - - - - - - - - - - - - - -
+		HOMEWORK TITLE
+  - -  - - - - - - - - - - - - - - - - - - - - - - -->
+
+
+<div class="headerdiv">
+<h1>
+Tufts CS 117 Assignment:<br>Naming
+<br>
+Questions - Part I
+</h1>
+</div>
+
+<!-- ******************************************************
+
+              PLEASE ANSWER QUESTIONS IN THE SECTIONS
+	      LABELED class="a" (for answer)
+
+     ****************************************************** -->
+
+
+
+<div class="main">
+
+<!-- - - - - - - - - - - - - - - - - - - - - - - -
+		QUESTION
+  - -  - - - - - - - - - - - - - - - - - - - - - - -->
+ <div class="qa">
+<p>Please answer each of the following questions.</p>
+
+
+<ol class="qa">
+<li class="q">
+Please make a list of issues or design characteristics that one
+should consider in designing a naming system.
+List as many as you can (within reason). You should use this as an opportunity to 
+show your mastery of the naming concepts we have been discussing in the class.
+I'll start you with a couple:
+</li>
+<li class="a">
+Issues and design characteristics that should be considered when
+designing a new naming system include:
+<ul>
+<li>What should be nameable using this naming system?</li>
+<li>Where and how will the names be used, and by whom?</li>
+<li>Will this interfere with any current naming system?</li>
+<li>Will one's name be the same and mean the same no matter where you are?</li>
+<li>Can certain names be "similar" and what does that suggest about them?</li>
+<li>How are names distributed and owned?</li>
+<li>When are two names "the same"?</li>
+<li>What form should the names be?, and what about names that do not follow that form?</li>
+<li>Can and how can names be changed?</li>
+<li>How accessible and known are these names?</li>
+<li>Can two things have the same name?</li>
+<li>Can something have multiple names?</li>
+<li>Are there "nicknames"?</li>
+<li>What characters (is it even characters) are allowed?</li>
+<li>What can you learn just by looking at the name?</li>
+<li>How do the named objects interact/relate with one another?</li>
+</ul>
+				      
+</li>
+
+<li class="q">Choose an existing naming system that interests you.
+Examples include file naming in Unix/Linux systems, the phone
+numbers discussed in your reading, etc. Many good examples
+are related to computer systems, but if you prefer 
+you can choose something else. 
+<br>
+<br>
+For the system you choose, <em>explain the system you choose in sufficient detail so that someone who had never seen it before would understand the rest of your analysis</em>.
+Explain where the system is used, and what can be named, what names look like and what the rules for assigning them are, etc. Then briefly explain 
+how the system you choose does or does not deal with the issues you list above. 
+Again, <em>the goal is to show your ability to apply the principles and insights we discussed in class</em>.
+If your list above is very long, then just choose up to 8 important ones to deal with here.
+WARNING: Don't assume that <em>you</em> know how a system works. In past years we've had many students give incorrect descriptions of, e.g. what the limitations are on Linux filenames, or what can be named with such names, because students based their answers on personal experience or assumptions rather than on how Linux really works. As in all technical writing, make sure that your explanations are correct! Even for systems you use a lot, you might want to find the specifications.
+</li>
+<li class="a">
+    Linux File System
+
+    <ul>
+        <li>
+            <b>What to name:</b> You can name "files", things with data, such as directories, code, 
+            images, etc.
+        </li>
+        <li>
+            <b>Characters:</b>
+            You can use upper and lowercase letters, numbers, ".", "-", and "_".
+            You can use other special characters such as blank space, but they are 
+            hard to use and it is better to avoid them. You cannot use the null character.
+        </li>
+        <li>
+            <b>Relation of Files:</b> "/" is reserved as the separator 
+            between files and directories in a pathname. 
+        </li>
+        <li>
+            <b>Permissions:</b> Generally, if you have write permission to a 
+            directory you can rename any file in that directory. If you have read 
+            permission, you can view the contents of a file or list the contents of a directory.
+        </li>
+        <li>
+            <b>Inconsistency: </b> The name and file extension has no 
+            guarantee on a file's data.
+        </li>
+        <li>
+            <b>Multiple Names: </b> You can create more than one name for the same file by
+            creating "hard links".
+        </li>
+        <li>
+            <b>Uniqueness:</b> A filename must be unique inside its directory. For example, 
+            inside /home/vivek directory you cannot create a demo.txt file 
+            and demo.txt directory name. However, other directory may have 
+            files with the same names. For example, you can create demo.txt directory in /tmp.
+        </li>
+        <li>
+            <b>Equality: </b> Two names are the same if their corresponding 
+            files contain the same data. This is used using the "diff" command.
+        </li>
+    </ul>
+</ol>
+
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,136 @@
+<!DOCTYPE HTML>
+<!-- 
+ **********************************************************
+
+             TUFTS CS 117 HOMEWORK ASSIGNMENT
+
+        Fill in your name, e-mail and answers to questions
+        in the sections provided below.
+
+          All questions are marked up: <li class="q">
+          All answers are marked up:   <li class="a">
+
+
+     PLEASE DO NOT MODIFY ANY THING OTHER THAN THE 
+     NAME, E-MAIL, AND ANSWER FIELDS (you may also add
+     css declarations in the <head> if you need them,
+     but usually you won't.
+
+ **********************************************************
+ -->
+
+
+<html lang="en">
+<head>
+<meta charset="utf-8"> 
+<title>Tufts CS 117 Assignment &#8212; Ping demonstration program</title>
+<link rel="stylesheet" type="text/css" href="https://www.cs.tufts.edu/comp/117/style/homework.css" >
+</head>
+
+<body class="homework">
+
+
+<!-- ******************************************************
+	   YOU MUST FILL IN YOUR NAME, UTLN AND EMAIL BELOW!!
+         (You may copy this from an earlier assignment
+                         if you like)
+
+     ****************************************************** -->
+
+
+<div class="student">
+<p>
+<span class="label">Student name: </span>
+Brian Yang
+<br>
+
+<span class="label">LOGIN: </span>
+byang05
+<br>
+
+<span class="label">E-mail: </span>
+<!-- DON'T FORGET UP UPDATE THE MAILTO: URI BELOW ALONG WITH
+     YOUR EMAIL IN THE ANCHOR.  IT SHOULD LOOK LIKE:
+ <a href="mailto:lady.gaga@cs.tufts.edu">lady.gaga@cs.tufts.edu</a>
+--> 
+
+<a href="mailto:brian.yang@tufts.edu">brian.yang@tufts.edu</a>
+<br>
+</p>
+</div>
+
+
+
+
+<div class="UpperLeftHeader">
+<p>Tufts CS 117 (Fall 2024):
+<br>
+Internet-scale Distributed Systems
+</p>
+</div>
+
+
+<!-- - - - - - - - - - - - - - - - - - - - - - - -
+		HOMEWORK TITLE
+  - -  - - - - - - - - - - - - - - - - - - - - - - -->
+
+
+<div class="headerdiv">
+<h1>
+Tufts CS 117 Assignment<br>Ping demonstration program
+<br>
+Questions
+</h1>
+</div>
+
+<!-- ******************************************************
+
+              PLEASE ANSWER QUESTIONS IN THE SECTIONS
+	      LABELED class="a" (for answer)
+
+     ****************************************************** -->
+
+
+
+
+<div class="main">
+
+<!-- - - - - - - - - - - - - - - - - - - - - - - -
+		QUESTION
+  - -  - - - - - - - - - - - - - - - - - - - - - - -->
+<div class="qa">
+
+<ol class="qa">
+<li class="q">Why did more client output result when you added the loop
+to read extra messages after each successful message receipt? Why
+were some messages never printed? Why were some printed late and out
+of order?</li>
+<li class="a">
+The server outputted the correct amount of messages everytime without me 
+needing to read extra messages, but I would assume we would need to if the 
+packets came late from the server. Some messages were never printed probably 
+because it didn't reach the client or server (mine did). Some were printed 
+late or out of order because a packet chose a different, possible faster or 
+slower path (mine was completely fine).
+</li>
+
+<li class="q">What was confusing about this assignment or 
+programming framework that we should
+explain in more detail before proceeding to the next assignment?</li>
+<li class="a">
+The nastiness level didn't change anything as far as I could see except for 
+level 1 introducing the need to reread and level 4 outputting a message that 
+I send a while ago.
+</li>
+
+
+<li class="q">How much UDP (datagram) style programming did you already know before doing this assignment?</li>
+<li class="a">
+None
+</li>
+
+</ol>
+</div>
+</div>
+</body>
+</html>
