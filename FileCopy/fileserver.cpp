@@ -16,7 +16,7 @@ string make_hash(string file_name);
 vector<string> split(const string &str, char delimiter);
 C150DgmSocket* createSocket(int nastiness);
 void checkAndPrintMessage(ssize_t readlen, char *msg, ssize_t bufferlen);
-void processIncomingMessages(C150DgmSocket *sock, const string &programName);
+void processIncomingMessages(C150DgmSocket *sock, const string &programName, string targetdir);
 bool sendMessageWithRetries(C150DgmSocket *sock, const string &msg, int maxRetries);
 std::vector<std::string> split(const std::string& s, const std::string& delimiter);
 
@@ -24,35 +24,38 @@ const int maxRetries = 5;
 
 int main(int argc, char *argv[]) {
     //
-    // Variable declarations
-    //
-    int nastiness;               // how aggressively do we drop packets, etc?
-
-    //
     // Check command line and parse arguments
     //
-    if (argc != 2)  {
-        fprintf(stderr,"Correct syntxt is: %s <nastiness_number>\n", argv[0]);
+    if (argc != 4)  {
+        fprintf(stderr,"Correct syntxt is: %s <networknastiness> <filenastiness> <targetdir>\n", argv[0]);
         exit(1);
     }
     if (strspn(argv[1], "0123456789") != strlen(argv[1])) {
         fprintf(stderr,"Nastiness %s is not numeric\n", argv[1]);     
-        fprintf(stderr,"Correct syntxt is: %s <nastiness_number>\n", argv[0]);     
+        fprintf(stderr,"Correct syntxt is: %s <networknastiness> <filenastiness> <targetdir>\n", argv[0]);     
         exit(4);
     }
-    nastiness = atoi(argv[1]);   // convert command line string to integer
-       
+
+    int network_nastiness = atoi(argv[1]);
+    // int file_nastiness = atoi(argv[2]);
+    char* targetdir = argv[3];
+
+    //
+    //  DO THIS FIRST OR YOUR ASSIGNMENT WON'T BE GRADED!
+    //
+    GRADEME(argc, argv);
+
     //
     //  Set up debug message logging
     //
-    // setUpDebugLogging("fileserverdebug.txt", argc, argv);
+    // setUpDebugLogging("fileserverdebug.txt", argc, argv);.
 
     // c150debug->setIndent("    ");              // if we merge client and server
     try {
         // Create the socket
-        C150DgmSocket *sock = createSocket(nastiness);
-        processIncomingMessages(sock, argv[0]);
-
+        C150DgmSocket *sock = createSocket(network_nastiness);
+        processIncomingMessages(sock, argv[0], targetdir);
+        
     } catch(C150NetworkException& e) {
          // Write to debug log
         c150debug->printf(C150ALWAYSLOG,"Caught C150NetworkException: %s\n",
@@ -78,7 +81,7 @@ C150DgmSocket* createSocket(int nastiness) {
 }
 
 // Function to process incoming messages and handle responses
-void processIncomingMessages(C150DgmSocket *sock, const string &programName) {
+void processIncomingMessages(C150DgmSocket *sock, const string &programName, string targetdir) {
     ssize_t readlen;
     char incomingMessage[512];
     string return_msg;
@@ -96,18 +99,31 @@ void processIncomingMessages(C150DgmSocket *sock, const string &programName) {
     
         vector<string> arguments = split(incoming, ' ');
 
+        // Checks file and sends back checksum
         if (arguments[0] == "CHECK" && arguments.size() == 2) {
             string file_name = arguments[1];
-            string file_path = "TARGET/" + file_name;
+            string file_path = targetdir + "/" + file_name;
             string hash = make_hash(file_path);
-
-            return_msg = file_name + " " + hash;
+            
+            // Grade log receiving file 
+            *GRADING << "File: " << file_name << " starting to receive file" << endl;
+            return_msg = "CHECK " + file_name + " " + hash;
+            *GRADING << "File: " << file_name << " received, beginning end-to-end check" << endl;
 
             sock->write(return_msg.c_str(), return_msg.length() + 1);  // +1 includes the null terminator
+        
+        // 
         } else if (arguments[0] == "EQUAL" && arguments.size() == 3) {
-            // cout << arguments[1] << " " << arguments[2] << endl;
+            cout << arguments[1]  + " " + arguments[2] << endl;
+            string file_name = arguments[1];
+            bool is_equal = (arguments[2] == "1");
 
-            return_msg = arguments[1]  + " " + arguments[2]; //TODO: last argyuments ends in a \n i think
+            *GRADING << "File: " << arguments[1] << " end-to-end check ";
+            *GRADING << ((is_equal) ? "succeeded" : "failed");
+            *GRADING << endl;
+
+            //TODO: The server should acknowledge to the client
+            return_msg = incomingMessage;
             sock->write(return_msg.c_str(), return_msg.length() + 1);
         } else {
             cerr << "Error: invalid message.\n";

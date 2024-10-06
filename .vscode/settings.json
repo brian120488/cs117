@@ -16,6 +16,8 @@
         "sstream": "cpp",
         "ios": "cpp",
         "iomanip": "cpp",
-        "new": "cpp"
+        "new": "cpp",
+        "memory_resource": "cpp",
+        "vector": "cpp"
     }
 }

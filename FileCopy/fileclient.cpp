@@ -18,7 +18,7 @@ using namespace C150NETWORK;
 string make_hash(string file_name);
 void print_hash(const string& obuf);
 ssize_t write_to_server_and_wait(C150DgmSocket *sock, string message, char *incomingMessage);
-
+vector<string> split(const string &str, char delimiter);
 void checkAndPrintMessage(ssize_t readlen, char *msg, ssize_t bufferlen);
 
 int main(int argc, char *argv[]) {
@@ -26,8 +26,7 @@ int main(int argc, char *argv[]) {
     //
     //  DO THIS FIRST OR YOUR ASSIGNMENT WON'T BE GRADED!
     //
-  
-    // GRADEME(argc, argv);
+    GRADEME(argc, argv);
 
     if (argc != 5) {
         fprintf(stderr,"Correct syntax is %s <server> <networknastiness> <filenastiness> <srcdir>\n", argv[0]);
@@ -44,8 +43,6 @@ int main(int argc, char *argv[]) {
     // int file_nastiness = atoi(argv[3]);
     char* srcdir = argv[4];
 
-    // example for gradelog output
-    // *GRADING << "File: <name>, beginning transmission, attempt <attempt>" endl;
     try {
         C150DgmSocket *sock = new C150NastyDgmSocket(network_nastiness);
         sock -> setServerName(server);  
@@ -59,20 +56,34 @@ int main(int argc, char *argv[]) {
 
             try {
                 readlen = write_to_server_and_wait(sock, "CHECK " + file_name, incomingMessage);
+                if (readlen == 0) {
+                    printf("Server timedout\n");
+                    break; // Server network down so give up
+                } 
 
                 string incoming(incomingMessage);
-                size_t spacePos = incoming.find(' ');
-                string server_file_name = incoming.substr(0, spacePos);
-                string incoming_hash = incoming.substr(spacePos + 1);
+                vector<string> arguments = split(incoming, ' ');
+                string command = arguments[0];
+                string server_file_name = arguments[1];
+                string incoming_hash = arguments[2];
+                // TODO: add while loop incase they send up wrong msg
+                // if (command != "CHECK" or file_name != server_file_name) continue;
 
-                string msg = "EQUAL " + file_name;
-                msg += (incoming_hash == hash) ? " 1" :  " 0";
+                string msg = "EQUAL " + file_name + " ";
+                msg += (incoming_hash == hash) ? "1" : "0";
+                if (incoming_hash == hash) {
+                    *GRADING << "File: " << file_name << " end-to-end check succeeded, attempt 1" << endl;
+                } else {
+                    *GRADING << "File: " << file_name << " end-to-end check failed, attempt 1" << endl;
+                }
+
                 readlen = write_to_server_and_wait(sock, msg, incomingMessage);
-                // TODO: process server's acknowledgment
+                if (readlen == 0) {
+                    printf("Server timedout\n");
+                    break; // Server network down so give up
+                } 
 
-
-                readlen += 1; //cuz no reaosn
-                cout << incomingMessage;
+                cout << incomingMessage << endl;
             }
             catch (C150NetworkException& e) {
                 c150debug->printf(C150ALWAYSLOG,"Caught C150NetworkException: %s\n",
@@ -80,7 +91,6 @@ int main(int argc, char *argv[]) {
                 cerr << argv[0] << ": caught C150NetworkException: " << e.formattedExplanation()
                                 << endl;
             }
-            cout << endl;
         }
     }
     catch (const fs::filesystem_error& e) {
@@ -92,47 +102,67 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
-
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+//
+//                         write_to_server_and_wait
+//
+//             
+//        
+//
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 ssize_t write_to_server_and_wait(C150DgmSocket *sock, string message, char *incomingMessage) {
     ssize_t readlen;
     int maxRetries = 5;
     bool messageReceived = false;
+    string file_name = split(message, ' ')[1];
     for (int retries = 0; retries < maxRetries && !messageReceived; retries++) {
+        *GRADING << "File: " << file_name << ", beginning transmission, attempt " << retries + 1 << endl;
         sock->write(message.c_str(), message.length() + 1); // +1 includes the null terminator
+        *GRADING << "File: " << file_name << " transmission complete, waiting for end-to-end check, attempt " << retries + 1 << endl;
+
+        
         readlen = sock->read(incomingMessage, 512);
         if (readlen == 0) continue;
-        
-        incomingMessage[readlen] = '\0';
-        while (!sock->timedout()) {
-            readlen = sock -> read(incomingMessage, 512);
-        }
-        messageReceived = true;
 
-        // TODO: continue reading for packets?
+        incomingMessage[readlen] = '\0';
+        // this doesnt work
+        // while (!sock->timedout()) {
+        //     readlen = sock -> read(incomingMessage, 512);
+        // }
+        messageReceived = true;
     }
     return readlen;
 }
 
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+//
+//                            make_hash
+//
+//             Computes SHA-1 hash key for a given file 
+//        
+//
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 string make_hash(string file_path) {
     // Open the file
-    std::ifstream t(file_path, std::ios::binary);
+    ifstream t(file_path, ios::binary);
     if (!t.is_open()) {
-        throw std::runtime_error("Unable to open file: " + file_path);
+        throw runtime_error("Unable to open file: " + file_path);
     }
 
     // Read the entire file content into a string
-    std::stringstream buffer;
+    stringstream buffer;
     buffer << t.rdbuf();
-    std::string content = buffer.str();
+    string content = buffer.str();
 
     // Compute the SHA-1 hash
     unsigned char hash[SHA_DIGEST_LENGTH];
     SHA1(reinterpret_cast<const unsigned char*>(content.c_str()), content.length(), hash);
 
     // Convert the binary hash to a hex string
-    std::stringstream hex_stream;
+    stringstream hex_stream;
     for (int i = 0; i < SHA_DIGEST_LENGTH; ++i) {
-        hex_stream << std::hex << std::setw(2) << std::setfill('0') << (int)hash[i];
+        hex_stream << hex << setw(2) << setfill('0') << (int)hash[i];
     }
 
     // Return the hex string
@@ -199,5 +229,24 @@ void checkAndPrintMessage(ssize_t readlen, char *msg, ssize_t bufferlen) {
 
     c150debug->printf(C150APPLICATION,"PRINTING RESPONSE: Response received is \"%s\"\n", s.c_str());
     printf("Response received is \"%s\"\n", s.c_str());
+}
 
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+//
+//                            split
+//
+//        Split a string into tokens using a delimiter
+//        
+//
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+vector<string> split(const string &str, char delimiter) {
+    vector<string> tokens;
+    istringstream stream(str);
+    string token;
+    
+    while (getline(stream, token, delimiter)) {
+        tokens.push_back(token);
+    }
+    
+    return tokens;
 }
