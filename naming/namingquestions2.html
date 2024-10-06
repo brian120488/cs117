@@ -109,11 +109,19 @@ specifications, which of the following statements is/are <em>definitely true</em
 
 <ol class="qa">
 <li class="q">The example URI above is a reference to an HTML document? Briefly explain.</li>
-<li class="a">maybe but not guarantead</li>
+<li class="a">
+    Not definitely true. It may be possible the example URI is a reference to 
+    an HTML documents, but there is no guarantee. </li>
 <li class="q">The example URI is absolute? Briefly explain.</li>
-<li class="a">...your answer here...</li>
+<li class="a">
+    Yes, the example URI is absolute. It contains the entire URL structure:
+    protocol, subdomain, and etc. A relative URI would only contain the path, 
+    such as /homepage.html.
+</li>
 <li class="q">If you do an HTTP GET on the example URI from anywhere in the world, you will get the same thing? Which principle that we studied does this illustrate? Briefly explain.</li>
-<li class="a">...briefly explain why or why not, and which principle is illustrated...</li>
+<li class="a">
+    Yes, if the URI is absolute, you will get the same thing from an HTTP GET 
+    from anywhere in the world. and which principle is illustrated...</li>
 </ol>
 
 </li>
@@ -126,9 +134,9 @@ According to TAG Finding <a href="https://www.w3.org/2001/tag/doc/metaDataInURI-
 <ol class="qa">
 <li class="q">The Web page you get should
 be about discounts on shoes? (Yes or no? Briefly explain.)</li>
-<li class="a">...your answer here...</li>
+<li class="a">No. It is the same reasoning as from the HTML document question. </li>
 <li class="q">Again according to the finding, if you change the URI to read <code>http://greatdeals.com/discounts?item=gloves</code>, any Web page you get should be about discounts on gloves? (Yes or no? Briefly explain.)</li>
-<li class="a">...your answer here...</li>
+<li class="a">No, because of the same reasoning as above.</li>
 </ol>
 </li>
 
@@ -138,13 +146,13 @@ According to the ABNF in <a href="https://datatracker.ietf.org/doc/html/rfc3986"
 
 <ol class="qa">
 <li class="q">The nonterminal (rule) that matches <code>http</code> is?</li>
-<li class="a">...your answer here...</li>
+<li class="a">scheme</li>
 <li class="q">The nonterminal that matches <code>lat=42.408724&amp;long=-71.116179</code> is?</li>
-<li class="a">...your answer here...</li>
+<li class="a">query</li>
 <li class="q">True or false, the URI has a <code>hier-part</code>? If so, what is it? If not why not.</li>
-<li class="a">If true, then which part of the URI is the <code>hier-part</code>?</li>
+<li class="a">True: example.com/maps</li>
 <li class="q">True or false, the URI has a <code>path</code>?  If so, what is it? If not why not.</li>
-<li class="a">If true, then which part of the URI is the <code>path</code>?</li>
+<li class="a">True: /maps</li>
 </ol>
 
 </li>
