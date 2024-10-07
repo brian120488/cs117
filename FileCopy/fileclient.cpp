@@ -43,6 +43,15 @@ int main(int argc, char *argv[]) {
     // int file_nastiness = atoi(argv[3]);
     char* srcdir = argv[4];
 
+    // read file - filecopy
+
+
+
+
+
+
+    return 0;
+
     try {
         C150DgmSocket *sock = new C150NastyDgmSocket(network_nastiness);
         sock -> setServerName(server);  
@@ -57,8 +66,8 @@ int main(int argc, char *argv[]) {
             try {
                 readlen = write_to_server_and_wait(sock, "CHECK " + file_name, incomingMessage);
                 if (readlen == 0) {
-                    printf("Server timedout\n");
-                    break; // Server network down so give up
+                    printf("Server not responding\n");
+                    break; 
                 } 
 
                 string incoming(incomingMessage);
@@ -66,6 +75,7 @@ int main(int argc, char *argv[]) {
                 string command = arguments[0];
                 string server_file_name = arguments[1];
                 string incoming_hash = arguments[2];
+                
                 // TODO: add while loop incase they send up wrong msg
                 // if (command != "CHECK" or file_name != server_file_name) continue;
 
@@ -79,8 +89,8 @@ int main(int argc, char *argv[]) {
 
                 readlen = write_to_server_and_wait(sock, msg, incomingMessage);
                 if (readlen == 0) {
-                    printf("Server timedout\n");
-                    break; // Server network down so give up
+                    printf("Server not responding\n");
+                    break;
                 } 
 
                 cout << incomingMessage << endl;
@@ -106,8 +116,8 @@ int main(int argc, char *argv[]) {
 //
 //                         write_to_server_and_wait
 //
-//             
-//        
+//             Writes message to server and retries to get
+//             message back from server
 //
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 ssize_t write_to_server_and_wait(C150DgmSocket *sock, string message, char *incomingMessage) {
@@ -125,7 +135,7 @@ ssize_t write_to_server_and_wait(C150DgmSocket *sock, string message, char *inco
         if (readlen == 0) continue;
 
         incomingMessage[readlen] = '\0';
-        // this doesnt work
+        // NEEDSWORK
         // while (!sock->timedout()) {
         //     readlen = sock -> read(incomingMessage, 512);
         // }
