@@ -14,6 +14,14 @@ using namespace std;
 namespace fs = filesystem;
 using namespace C150NETWORK;
 
+struct Message {
+    string command;
+    string file_name;
+    int byte_offset;
+    char data[256];
+    string hash;
+    // string[] arguments;
+};
 
 string make_hash(string file_name);
 void print_hash(const string& obuf);
@@ -40,10 +48,48 @@ int main(int argc, char *argv[]) {
 
     char* server = argv[1];
     int network_nastiness = atoi(argv[2]);
-    // int file_nastiness = atoi(argv[3]);
-    char* srcdir = argv[4];
+    int file_nastiness = atoi(argv[3]);
+    char* srcdir = argv[4]; 
+
+    C150DgmSocket *sock = new C150NastyDgmSocket(network_nastiness);
+    sock -> setServerName(server);  
+    sock -> turnOnTimeouts(50);
+
 
     // read file - filecopy
+    for (const auto& entry : fs::directory_iterator(srcdir)) {
+        string file_name = entry.path().filename().string();
+        NASTYFILE file(file_nastiness);  
+
+        // if (!file) {
+        //     cerr << "Unable to open file: " << filepath << endl;
+        //     exit(12);
+        // }
+
+        const int data_size = 256;
+        char buffer[data_size];
+        int byte_offset = 0;
+        while (file.fread(buffer, data_size)) {
+            // TODO: hash the packet data
+            struct Message message = {"COPY", file_name, byte_offset * data_size, buffer, "1"};
+
+            char* serial = new char[sizeof(struct Message)];
+            memcpy(serial, &message, sizeof(struct Message));
+
+            string s(serial);
+            int readlen = sock->write(serial, s.length() + 1);
+
+            byte_offset++;
+        }
+
+        file.fclose();
+        if (file.fclose() != 0 ) {
+            cerr << "Error closing input file " << file_name << 
+                " errno=" << strerror(errno) << endl;
+            exit(16);
+        }
+    }
+
 
 
 
@@ -53,9 +99,9 @@ int main(int argc, char *argv[]) {
     return 0;
 
     try {
-        C150DgmSocket *sock = new C150NastyDgmSocket(network_nastiness);
-        sock -> setServerName(server);  
-        sock -> turnOnTimeouts(50);
+        // C150DgmSocket *sock = new C150NastyDgmSocket(network_nastiness);
+        // sock -> setServerName(server);  
+        // sock -> turnOnTimeouts(50);
 
         char incomingMessage[512];
         ssize_t readlen;

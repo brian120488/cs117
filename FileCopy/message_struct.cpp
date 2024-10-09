@@ -6,26 +6,28 @@ using namespace std;
 
 struct Message {
     string command;
-    // string file_name;
-    // int byte_offset;
-    // string data;
-    string[] arguments;
+    string file_name;
+    int byte_offset;
+    char data[256];
+    string hash;
+    // string[] arguments;
 
 };
 
 
 int main() {
-    struct Message myData = {"command","file_name", 1, "data"};
-
+    struct Message myData = {"command", "hi", 1, "data", "hash"};
+    
+    cout << sizeof(struct Message) << endl;
     // Serialize the struct
     char* buffer = new char[sizeof(struct Message)];
     memcpy(buffer, &myData, sizeof(struct Message));
 
     // Deserialize the struct
-    Message* recoveredData = reinterpret_cast<Message*>(buffer);
+    struct Message* recoveredData = reinterpret_cast<struct Message*>(buffer);
 
     cout << "Command: " << recoveredData->command << endl;
-    cout << "Data: " << recoveredData->data << endl;
+    cout << "Data: " << recoveredData->hash << endl;
 
     delete[] buffer;
 
