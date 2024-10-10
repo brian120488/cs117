@@ -88,7 +88,8 @@ int main(int argc, char *argv[]) {
             string message = "COPY " + file_name + " ";
             message += to_string(byte_offset * data_size) + " " + hash + " ";
             message += string(buffer).substr(0, len);
-            cout << message << endl;
+            // message += '\0';
+            cout << message;
             sock->write(message.c_str(), message.length() + 1);
 
             byte_offset++;

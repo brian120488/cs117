@@ -7,6 +7,7 @@
 #include <iomanip> 
 #include <openssl/sha.h>  // For SHA1
 #include <vector>
+#include "c150nastyfile.h"
 
 
 using namespace std;
@@ -16,10 +17,11 @@ string make_hash(string file_name);
 vector<string> split(const string &str, char delimiter, int limit);
 C150DgmSocket* createSocket(int nastiness);
 void checkAndPrintMessage(ssize_t readlen, char *msg, ssize_t bufferlen);
-void processIncomingMessages(C150DgmSocket *sock, const string &programName, string targetdir);
+void processIncomingMessages(C150DgmSocket *sock, const string &programName, string targetdir, int file_nastiness);
 bool sendMessageWithRetries(C150DgmSocket *sock, const string &msg, int maxRetries);
 
 const int maxRetries = 5;
+const int packetSize = 256;
 
 struct Message {
     string command;
@@ -44,7 +46,7 @@ int main(int argc, char *argv[]) {
     }
 
     int network_nastiness = atoi(argv[1]);
-    // int file_nastiness = atoi(argv[2]);
+    int file_nastiness = atoi(argv[2]);
     char* targetdir = argv[3];
 
     //
@@ -61,7 +63,7 @@ int main(int argc, char *argv[]) {
     try {
         // Create the socket
         C150DgmSocket *sock = createSocket(network_nastiness);
-        processIncomingMessages(sock, argv[0], targetdir);
+        processIncomingMessages(sock, argv[0], targetdir, file_nastiness);
         
     } catch(C150NetworkException& e) {
          // Write to debug log
@@ -88,7 +90,7 @@ C150DgmSocket* createSocket(int nastiness) {
 }
 
 // Function to process incoming messages and handle responses
-void processIncomingMessages(C150DgmSocket *sock, const string &programName, string targetdir) {
+void processIncomingMessages(C150DgmSocket *sock, const string &programName, string targetdir, int file_nastiness) {
     ssize_t readlen;
     char incomingMessage[512];
     string return_msg;
@@ -129,15 +131,45 @@ void processIncomingMessages(C150DgmSocket *sock, const string &programName, str
             return_msg = incomingMessage;
             sock->write(return_msg.c_str(), return_msg.length() + 1);
         } else if (arguments[0] == "COPY") {
-            // string file_name = arguments[1];
-            // cout << file_name << endl;
-            // int byte_offset = stoi(arguments[2]);
-            // cout << byte_offset << endl;
+            string file_name = arguments[1];
+            int byte_offset = stoi(arguments[2]);
             // string hash = arguments[3];
             // cout << hash << endl;
-            // cout << arguments.size() << endl;
             string data = arguments[4];
-            cout << data << endl;
+
+            // Open the file for writing (create or overwrite by default)
+            string file_path = targetdir + "/" + file_name + ".TMP";
+            NASTYFILE outputFile(file_nastiness); 
+
+            void *fopenretval = outputFile.fopen(file_path.c_str(), "r+b");
+            if (fopenretval == NULL) {
+                // If file doesn't exist, open it in "w+b" mode to create it
+                fopenretval = outputFile.fopen(file_path.c_str(), "w+b");
+                if (fopenretval == NULL) {
+                    cerr << "Error creating and opening file " << file_path << " errno=" << strerror(errno) << endl;
+                    exit(12);
+                }
+            }
+            outputFile.fseek(byte_offset, SEEK_SET);
+            char arr[packetSize] = {0};
+            int length = data.copy(arr, data.length());
+            int len = outputFile.fwrite(arr, 1, length);
+            cout << length << " " << len << endl;
+            
+            if (len != length) {
+                cerr << "Error writing file " << file_path << 
+                    "  errno=" << strerror(errno) << endl;
+                exit(16);
+            }
+
+            // TODO: close at last packet
+            // if (outputFile.fclose() == 0) {
+            //     cout << "Finished writing file " << file_name <<endl;
+            // } else {
+            //     cerr << "Error closing output file " << file_name << 
+            //     " errno=" << strerror(errno) << endl;
+            //     exit(16);
+            // }
 
         } else {
             cout << "Invalid message" << endl;
