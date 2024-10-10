@@ -59,31 +59,42 @@ int main(int argc, char *argv[]) {
     // read file - filecopy
     for (const auto& entry : fs::directory_iterator(srcdir)) {
         string file_name = entry.path().filename().string();
+        if (file_name != "tyger.txt") {
+            continue;
+        }
         NASTYFILE file(file_nastiness);  
-
-        // if (!file) {
-        //     cerr << "Unable to open file: " << filepath << endl;
-        //     exit(12);
-        // }
+        
+        string file_path = string(srcdir) + "/" + file_name;
+        void *fopenretval = file.fopen(file_path.c_str(), "rb");  
+        if (fopenretval == NULL) {
+            cerr << "Error opening input file " << file_path << 
+                " errno=" << strerror(errno) << endl;
+            exit(12);
+        }
 
         const int data_size = 256;
         char buffer[data_size];
         int byte_offset = 0;
-        while (file.fread(buffer, data_size)) {
+        int len;
+        while ((len = file.fread(buffer, 1, data_size))) {
+            if (len > data_size) {
+                cerr << "Error reading file " << file_name << 
+                    "  errno=" << strerror(errno) << endl;
+                exit(16);
+            }
+
             // TODO: hash the packet data
-            struct Message message = {"COPY", file_name, byte_offset * data_size, buffer, "1"};
-
-            char* serial = new char[sizeof(struct Message)];
-            memcpy(serial, &message, sizeof(struct Message));
-
-            string s(serial);
-            int readlen = sock->write(serial, s.length() + 1);
+            string hash = "1";
+            string message = "COPY " + file_name + " ";
+            message += to_string(byte_offset * data_size) + " " + hash + " ";
+            message += string(buffer).substr(0, len);
+            cout << message << endl;
+            sock->write(message.c_str(), message.length() + 1);
 
             byte_offset++;
         }
 
-        file.fclose();
-        if (file.fclose() != 0 ) {
+        if (file.fclose() != 0) {
             cerr << "Error closing input file " << file_name << 
                 " errno=" << strerror(errno) << endl;
             exit(16);

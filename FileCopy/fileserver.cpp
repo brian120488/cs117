@@ -13,14 +13,21 @@ using namespace std;
 using namespace C150NETWORK;
 
 string make_hash(string file_name);
-vector<string> split(const string &str, char delimiter);
+vector<string> split(const string &str, char delimiter, int limit);
 C150DgmSocket* createSocket(int nastiness);
 void checkAndPrintMessage(ssize_t readlen, char *msg, ssize_t bufferlen);
 void processIncomingMessages(C150DgmSocket *sock, const string &programName, string targetdir);
 bool sendMessageWithRetries(C150DgmSocket *sock, const string &msg, int maxRetries);
-std::vector<std::string> split(const std::string& s, const std::string& delimiter);
 
 const int maxRetries = 5;
+
+struct Message {
+    string command;
+    string file_name;
+    int byte_offset;
+    char data[256];
+    string hash;
+};
 
 int main(int argc, char *argv[]) {
     //
@@ -95,12 +102,10 @@ void processIncomingMessages(C150DgmSocket *sock, const string &programName, str
         incomingMessage[readlen] = '\0';  // Ensure null termination
         
         string incoming(incomingMessage);
-        cout << incomingMessage << endl;
-    
-        vector<string> arguments = split(incoming, ' ');
+        vector<string> arguments = split(incoming, ' ', 4);
 
         // Checks file and sends back checksum
-        if (arguments[0] == "CHECK" && arguments.size() == 2) {
+        if (arguments[0] == "CHECK") {
             string file_name = arguments[1];
             string file_path = targetdir + "/" + file_name;
             string hash = make_hash(file_path);
@@ -111,9 +116,7 @@ void processIncomingMessages(C150DgmSocket *sock, const string &programName, str
             *GRADING << "File: " << file_name << " received, beginning end-to-end check" << endl;
 
             sock->write(return_msg.c_str(), return_msg.length() + 1);  // +1 includes the null terminator
-        
-        // 
-        } else if (arguments[0] == "EQUAL" && arguments.size() == 3) {
+        } else if (arguments[0] == "EQUAL") {
             cout << arguments[1]  + " " + arguments[2] << endl;
             string file_name = arguments[1];
             bool is_equal = (arguments[2] == "1");
@@ -125,8 +128,19 @@ void processIncomingMessages(C150DgmSocket *sock, const string &programName, str
             //TODO: The server should acknowledge to the client
             return_msg = incomingMessage;
             sock->write(return_msg.c_str(), return_msg.length() + 1);
+        } else if (arguments[0] == "COPY") {
+            // string file_name = arguments[1];
+            // cout << file_name << endl;
+            // int byte_offset = stoi(arguments[2]);
+            // cout << byte_offset << endl;
+            // string hash = arguments[3];
+            // cout << hash << endl;
+            // cout << arguments.size() << endl;
+            string data = arguments[4];
+            cout << data << endl;
+
         } else {
-            cerr << "Error: invalid message.\n";
+            cout << "Invalid message" << endl;
         }
 
         // c150debug->printf(C150APPLICATION, "Returned from write, doing read()");
@@ -188,15 +202,25 @@ bool sendMessageWithRetries(C150DgmSocket *sock, const string &msg, int maxRetri
 //     return tokens;
 // }
 
-vector<string> split(const string &str, char delimiter) {
-    vector<string> tokens;
+vector<string> split(const string &str, char delimiter, int limit = -1) {
+     vector<string> tokens;
     istringstream stream(str);
     string token;
+    int count = 0;
+    size_t pos = 0, prev_pos = 0;
     
-    while (getline(stream, token, delimiter)) {
-        tokens.push_back(token);
+    // Split tokens based on the delimiter
+    while (count != limit && (pos = str.find(delimiter, prev_pos)) != string::npos) {
+        tokens.push_back(str.substr(prev_pos, pos - prev_pos));
+        prev_pos = pos + 1;  // Move past the delimiter
+        count++;
     }
     
+    // If we've reached the limit or there are no more delimiters, append the remaining part of the string
+    if (prev_pos < str.size()) {
+        tokens.push_back(str.substr(prev_pos));
+    }
+
     return tokens;
 }
 

@@ -335,10 +335,10 @@ copyFile(string sourceDir, string fileName, string targetDir, int nastiness) {
       exit(16);
     }
   
-    if (outputFile.fclose() == 0 ) {
+    if (outputFile.fclose() == 0) {
        cout << "Finished writing file " << targetName <<endl;
     } else {
-      cerr << "Error closing output file " << targetName << 
+        cerr << "Error closing output file " << targetName << 
 	      " errno=" << strerror(errno) << endl;
       exit(16);
     }
