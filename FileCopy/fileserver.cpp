@@ -13,12 +13,15 @@
 using namespace std;
 using namespace C150NETWORK;
 
+void checkArguments(int argc, char *argv[]);
+vector<string> processMessage(char incomingMessage[512]);
 string make_hash(string file_name);
 vector<string> split(const string &str, char delimiter, int limit);
 C150DgmSocket* createSocket(int nastiness);
 void checkAndPrintMessage(ssize_t readlen, char *msg, ssize_t bufferlen);
 void processIncomingMessages(C150DgmSocket *sock, const string &programName, string targetdir, int file_nastiness);
 bool sendMessageWithRetries(C150DgmSocket *sock, const string &msg, int maxRetries);
+void open_or_create_file(NASTYFILE &file, string file_path);
 
 const int maxRetries = 5;
 const int packetSize = 256;
@@ -32,84 +35,45 @@ struct Message {
 };
 
 int main(int argc, char *argv[]) {
-    //
-    // Check command line and parse arguments
-    //
-    if (argc != 4)  {
-        fprintf(stderr,"Correct syntxt is: %s <networknastiness> <filenastiness> <targetdir>\n", argv[0]);
-        exit(1);
-    }
-    if (strspn(argv[1], "0123456789") != strlen(argv[1])) {
-        fprintf(stderr,"Nastiness %s is not numeric\n", argv[1]);     
-        fprintf(stderr,"Correct syntxt is: %s <networknastiness> <filenastiness> <targetdir>\n", argv[0]);     
-        exit(4);
-    }
+    GRADEME(argc, argv);
+    checkArguments(argc, argv);
 
     int network_nastiness = atoi(argv[1]);
     int file_nastiness = atoi(argv[2]);
     char* targetdir = argv[3];
 
-    //
-    //  DO THIS FIRST OR YOUR ASSIGNMENT WON'T BE GRADED!
-    //
-    GRADEME(argc, argv);
 
-    //
-    //  Set up debug message logging
-    //
-    // setUpDebugLogging("fileserverdebug.txt", argc, argv);.
-
-    // c150debug->setIndent("    ");              // if we merge client and server
     try {
-        // Create the socket
-        C150DgmSocket *sock = createSocket(network_nastiness);
+        C150DgmSocket *sock = new C150NastyDgmSocket(network_nastiness);
+        sock->turnOnTimeouts(100);  
         processIncomingMessages(sock, argv[0], targetdir, file_nastiness);
-        
     } catch(C150NetworkException& e) {
-         // Write to debug log
         c150debug->printf(C150ALWAYSLOG,"Caught C150NetworkException: %s\n",
                           e.formattedExplanation().c_str());
-        // In case we're logging to a file, write to the console too
         cerr << argv[0] << ": caught C150NetworkException: " << e.formattedExplanation() << endl;
     }
 
     return 0;
 }
 
-
-// Function to create and configure the socket
-C150DgmSocket* createSocket(int nastiness) {
-    c150debug->printf(C150APPLICATION,"Creating C150NastyDgmSocket(nastiness=%d)", nastiness);
-
-    C150DgmSocket *sock = new C150NastyDgmSocket(nastiness);
-    sock->turnOnTimeouts(500);  // Set a 500ms timeout
-
-    c150debug->printf(C150APPLICATION,"Socket ready to accept messages");
-
-    return sock;
-}
-
 // Function to process incoming messages and handle responses
 void processIncomingMessages(C150DgmSocket *sock, const string &programName, string targetdir, int file_nastiness) {
-    ssize_t readlen;
     char incomingMessage[512];
     string return_msg;
 
     while (1) {
-        readlen = sock->read(incomingMessage, sizeof(incomingMessage) - 1);
+        ssize_t readlen = sock->read(incomingMessage, sizeof(incomingMessage) - 1);
+        cout << incomingMessage;
         if (readlen == 0) {
-            c150debug->printf(C150APPLICATION,"Read zero length message, trying again");
             continue;
         }
         incomingMessage[readlen] = '\0';  // Ensure null termination
-        
-        string incoming(incomingMessage);
-        vector<string> arguments = split(incoming, ' ', 4);
+        vector<string> arguments = processMessage(incomingMessage);
 
         // Checks file and sends back checksum
         if (arguments[0] == "CHECK") {
             string file_name = arguments[1];
-            string file_path = targetdir + "/" + file_name;
+            string file_path = targetdir + "/" + file_name + ".TMP";
             string hash = make_hash(file_path);
             
             // Grade log receiving file 
@@ -141,20 +105,11 @@ void processIncomingMessages(C150DgmSocket *sock, const string &programName, str
             string file_path = targetdir + "/" + file_name + ".TMP";
             NASTYFILE outputFile(file_nastiness); 
 
-            void *fopenretval = outputFile.fopen(file_path.c_str(), "r+b");
-            if (fopenretval == NULL) {
-                // If file doesn't exist, open it in "w+b" mode to create it
-                fopenretval = outputFile.fopen(file_path.c_str(), "w+b");
-                if (fopenretval == NULL) {
-                    cerr << "Error creating and opening file " << file_path << " errno=" << strerror(errno) << endl;
-                    exit(12);
-                }
-            }
+            open_or_create_file(outputFile, file_path);
             outputFile.fseek(byte_offset, SEEK_SET);
             char arr[packetSize] = {0};
             int length = data.copy(arr, data.length());
             int len = outputFile.fwrite(arr, 1, length);
-            cout << length << " " << len << endl;
             
             if (len != length) {
                 cerr << "Error writing file " << file_path << 
@@ -162,7 +117,8 @@ void processIncomingMessages(C150DgmSocket *sock, const string &programName, str
                 exit(16);
             }
 
-            // TODO: close at last packet
+
+            // TODO: close at last packet or have CHECK close
             // if (outputFile.fclose() == 0) {
             //     cout << "Finished writing file " << file_name <<endl;
             // } else {
@@ -174,8 +130,6 @@ void processIncomingMessages(C150DgmSocket *sock, const string &programName, str
         } else {
             cout << "Invalid message" << endl;
         }
-
-        // c150debug->printf(C150APPLICATION, "Returned from write, doing read()");
 
         // bool success = sendMessageWithRetries(sock, hash, maxRetries);
         // if (!success) {
@@ -220,20 +174,6 @@ bool sendMessageWithRetries(C150DgmSocket *sock, const string &msg, int maxRetri
     return messageReceived;
 }
 
-// std::vector<std::string> split(const std::string& s, const std::string& delimiter) {
-//     std::vector<std::string> tokens;
-//     size_t pos = 0;
-//     std::string token;
-//     while ((pos = s.find(delimiter)) != std::string::npos) {
-//         token = s.substr(0, pos);
-//         tokens.push_back(token);
-//         s.erase(0, pos + delimiter.length());
-//     }
-//     tokens.push_back(s);
-
-//     return tokens;
-// }
-
 vector<string> split(const string &str, char delimiter, int limit = -1) {
      vector<string> tokens;
     istringstream stream(str);
@@ -258,7 +198,6 @@ vector<string> split(const string &str, char delimiter, int limit = -1) {
 
 string make_hash(string file_path) {
     // Open the file
-    // cout << "File path in hash func: " << file_path << endl;
     std::ifstream t(file_path, std::ios::binary);
     if (!t.is_open()) {
         throw std::runtime_error("Unable to open file: " + file_path);
@@ -340,81 +279,32 @@ checkAndPrintMessage(ssize_t readlen, char *msg, ssize_t bufferlen) {
 
 }
 
+void checkArguments(int argc, char *argv[]) {
+    if (argc != 4)  {
+        fprintf(stderr,"Correct syntxt is: %s <networknastiness> <filenastiness> <targetdir>\n", argv[0]);
+        exit(1);
+    }
+    if (strspn(argv[1], "0123456789") != strlen(argv[1])) {
+        fprintf(stderr,"Nastiness %s is not numeric\n", argv[1]);     
+        fprintf(stderr,"Correct syntxt is: %s <networknastiness> <filenastiness> <targetdir>\n", argv[0]);     
+        exit(4);
+    }
+}
 
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-//
-//                     setUpDebugLogging
-//
-//        For COMP 150-IDS, a set of standards utilities
-//        are provided for logging timestamped debug messages.
-//        You can use them to write your own messages, but 
-//        more importantly, the communication libraries provided
-//        to you will write into the same logs.
-//
-//        As shown below, you can use the enableLogging
-//        method to choose which classes of messages will show up:
-//        You may want to turn on a lot for some debugging, then
-//        turn off some when it gets too noisy and your core code is
-//        working. You can also make up and use your own flags
-//        to create different classes of debug output within your
-//        application code
-//
-//        NEEDSWORK: should be factored into shared code w/pingserver
-//        NEEDSWORK: document arguments
-//
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
- 
-void setUpDebugLogging(const char *logname, int argc, char *argv[]) {
+vector<string> processMessage(char incomingMessage[512]) {    
+    string incoming(incomingMessage);
+    vector<string> arguments = split(incoming, ' ', 4);
+    return arguments;
+}
 
-    //   
-    //           Choose where debug output should go
-    //
-    // The default is that debug output goes to cerr.
-    //
-    // Uncomment the following three lines to direct
-    // debug output to a file. Comment them
-    // to default to the console.
-    //
-    // Note: the new DebugStream and ofstream MUST live after we return
-    // from setUpDebugLogging, so we have to allocate
-    // them dynamically.
-    //
-    //
-    // Explanation: 
-    // 
-    //     The first line is ordinary C++ to open a file
-    //     as an output stream.
-    //
-    //     The second line wraps that will all the services
-    //     of a comp 150-IDS debug stream, and names that filestreamp.
-    //
-    //     The third line replaces the global variable c150debug
-    //     and sets it to point to the new debugstream. Since c150debug
-    //     is what all the c150 debug routines use to find the debug stream,
-    //     you've now effectively overridden the default.
-    //
-    ofstream *outstreamp = new ofstream(logname);
-    DebugStream *filestreamp = new DebugStream(outstreamp);
-    DebugStream::setDefaultLogger(filestreamp);
-
-    //
-    //  Put the program name and a timestamp on each line of the debug log.
-    //
-    c150debug->setPrefix(argv[0]);
-    c150debug->enableTimestamp(); 
-
-    //
-    // Ask to receive all classes of debug message
-    //
-    // See c150debug.h for other classes you can enable. To get more than
-    // one class, you can or (|) the flags together and pass the combined
-    // mask to c150debug -> enableLogging 
-    //
-    // By the way, the default is to disable all output except for
-    // messages written with the C150ALWAYSLOG flag. Those are typically
-    // used only for things like fatal errors. So, the default is
-    // for the system to run quietly without producing debug output.
-    //
-    c150debug->enableLogging(C150APPLICATION | C150NETWORKTRAFFIC | 
-                             C150NETWORKDELIVERY); 
+void open_or_create_file(NASTYFILE &file, string file_path) {
+    void *fopenretval = file.fopen(file_path.c_str(), "r+b");
+    if (fopenretval == NULL) {
+        // If file doesn't exist, open it in "w+b" mode to create it
+        fopenretval = file.fopen(file_path.c_str(), "w+b");
+        if (fopenretval == NULL) {
+            cerr << "Error creating and opening file " << file_path << " errno=" << strerror(errno) << endl;
+            exit(12);
+        }
+    }
 }

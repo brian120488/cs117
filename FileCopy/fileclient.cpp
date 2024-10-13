@@ -8,6 +8,7 @@
 #include <dirent.h>
 #include <sys/stat.h>
 #include "c150nastydgmsocket.h"
+#include <unistd.h>
 
 
 using namespace std;
@@ -20,31 +21,22 @@ struct Message {
     int byte_offset;
     char data[256];
     string hash;
-    // string[] arguments;
 };
 
+void checkArguments(int argc, char *argv[]);
 string make_hash(string file_name);
 void print_hash(const string& obuf);
 ssize_t write_to_server_and_wait(C150DgmSocket *sock, string message, char *incomingMessage);
 vector<string> split(const string &str, char delimiter);
 void checkAndPrintMessage(ssize_t readlen, char *msg, ssize_t bufferlen);
+void openFile(NASTYFILE &file, string file_path, string mode);
+void closeFile(NASTYFILE &file, string file_path);
+void copyFile(C150DgmSocket *sock, NASTYFILE &file, string file_name);
+void checkFile(C150DgmSocket *sock, string file_name, string file_path);
 
 int main(int argc, char *argv[]) {
-
-    //
-    //  DO THIS FIRST OR YOUR ASSIGNMENT WON'T BE GRADED!
-    //
     GRADEME(argc, argv);
-
-    if (argc != 5) {
-        fprintf(stderr,"Correct syntax is %s <server> <networknastiness> <filenastiness> <srcdir>\n", argv[0]);
-        exit (4);
-    }
-
-    if (strspn(argv[2], "0123456789") != strlen(argv[2]) || strspn(argv[3], "0123456789") != strlen(argv[3])) {
-        fprintf(stderr,"Nastiness %s or %s is not numeric\n", argv[2], argv[3]);    
-        exit(4);
-    }
+    checkArguments(argc, argv);
 
     char* server = argv[1];
     int network_nastiness = atoi(argv[2]);
@@ -53,120 +45,23 @@ int main(int argc, char *argv[]) {
 
     C150DgmSocket *sock = new C150NastyDgmSocket(network_nastiness);
     sock -> setServerName(server);  
-    sock -> turnOnTimeouts(50);
-
+    sock -> turnOnTimeouts(100);
 
     // read file - filecopy
     for (const auto& entry : fs::directory_iterator(srcdir)) {
-        string file_name = entry.path().filename().string();
-        if (file_name != "tyger.txt") {
-            continue;
-        }
         NASTYFILE file(file_nastiness);  
-        
+        string file_name = entry.path().filename().string();
         string file_path = string(srcdir) + "/" + file_name;
-        void *fopenretval = file.fopen(file_path.c_str(), "rb");  
-        if (fopenretval == NULL) {
-            cerr << "Error opening input file " << file_path << 
-                " errno=" << strerror(errno) << endl;
-            exit(12);
-        }
+        
+        if (file_name != "data1000") continue;
+        cout << file_name << endl;
 
-        const int data_size = 256;
-        char buffer[data_size];
-        int byte_offset = 0;
-        int len;
-        while ((len = file.fread(buffer, 1, data_size))) {
-            if (len > data_size) {
-                cerr << "Error reading file " << file_name << 
-                    "  errno=" << strerror(errno) << endl;
-                exit(16);
-            }
-
-            // TODO: hash the packet data
-            string hash = "1";
-            string message = "COPY " + file_name + " ";
-            message += to_string(byte_offset * data_size) + " " + hash + " ";
-            message += string(buffer).substr(0, len);
-            // message += '\0';
-            cout << message;
-            sock->write(message.c_str(), message.length() + 1);
-
-            byte_offset++;
-        }
-
-        if (file.fclose() != 0) {
-            cerr << "Error closing input file " << file_name << 
-                " errno=" << strerror(errno) << endl;
-            exit(16);
-        }
+        openFile(file, file_path, "rb");
+        copyFile(sock, file, file_name);
+        // checkFile(sock, file_name, file_path);
+        closeFile(file, file_path);
     }
 
-
-
-
-
-
-
-    return 0;
-
-    try {
-        // C150DgmSocket *sock = new C150NastyDgmSocket(network_nastiness);
-        // sock -> setServerName(server);  
-        // sock -> turnOnTimeouts(50);
-
-        char incomingMessage[512];
-        ssize_t readlen;
-        for (const auto& entry : fs::directory_iterator(srcdir)) {
-            string file_name = entry.path().filename().string();
-            string hash = make_hash(entry.path().string());
-
-            try {
-                readlen = write_to_server_and_wait(sock, "CHECK " + file_name, incomingMessage);
-                if (readlen == 0) {
-                    printf("Server not responding\n");
-                    break; 
-                } 
-
-                string incoming(incomingMessage);
-                vector<string> arguments = split(incoming, ' ');
-                string command = arguments[0];
-                string server_file_name = arguments[1];
-                string incoming_hash = arguments[2];
-                
-                // TODO: add while loop incase they send up wrong msg
-                // if (command != "CHECK" or file_name != server_file_name) continue;
-
-                string msg = "EQUAL " + file_name + " ";
-                msg += (incoming_hash == hash) ? "1" : "0";
-                if (incoming_hash == hash) {
-                    *GRADING << "File: " << file_name << " end-to-end check succeeded, attempt 1" << endl;
-                } else {
-                    *GRADING << "File: " << file_name << " end-to-end check failed, attempt 1" << endl;
-                }
-
-                readlen = write_to_server_and_wait(sock, msg, incomingMessage);
-                if (readlen == 0) {
-                    printf("Server not responding\n");
-                    break;
-                } 
-
-                cout << incomingMessage << endl;
-            }
-            catch (C150NetworkException& e) {
-                c150debug->printf(C150ALWAYSLOG,"Caught C150NetworkException: %s\n",
-                                e.formattedExplanation().c_str());
-                cerr << argv[0] << ": caught C150NetworkException: " << e.formattedExplanation()
-                                << endl;
-            }
-        }
-    }
-    catch (const fs::filesystem_error& e) {
-        cerr << "Filesystem error: " << e.what() << endl;
-    } catch (const exception& e) {
-        cerr << "General exception: " << e.what() << endl;
-    }
-    
     return 0;
 }
 
@@ -253,9 +148,6 @@ void print_hash(const string& obuf) {
 //        and print it to standard output.
 //
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
- 
-
-
 void checkAndPrintMessage(ssize_t readlen, char *msg, ssize_t bufferlen) {
     // 
     // Except in case of timeouts, we're not expecting
@@ -317,4 +209,101 @@ vector<string> split(const string &str, char delimiter) {
     }
     
     return tokens;
+}
+
+void openFile(NASTYFILE &file, string file_path, string mode) {
+    void *fopenretval = file.fopen(file_path.c_str(), "rb");  
+    if (fopenretval == NULL) {
+        cerr << "Error opening input file " << file_path << 
+            " errno=" << strerror(errno) << endl;
+        exit(12);
+    }
+}
+
+void closeFile(NASTYFILE &file, string file_path) {
+    if (file.fclose() != 0) {
+        cerr << "Error closing input file " << file_path << 
+            " errno=" << strerror(errno) << endl;
+        exit(16);
+    }
+}
+
+void checkArguments(int argc, char *argv[]) {
+    if (argc != 5) {
+        fprintf(stderr,"Correct syntax is %s <server> <networknastiness> <filenastiness> <srcdir>\n", argv[0]);
+        exit (4);
+    }
+
+    if (strspn(argv[2], "0123456789") != strlen(argv[2]) || strspn(argv[3], "0123456789") != strlen(argv[3])) {
+        fprintf(stderr,"Nastiness %s or %s is not numeric\n", argv[2], argv[3]);    
+        exit(4);
+    }
+}
+
+void copyFile(C150DgmSocket *sock, NASTYFILE &file, string file_name) {
+    const int data_size = 256;
+    char buffer[data_size];
+    int byte_offset = 0;
+    int len;
+    while ((len = file.fread(buffer, 1, data_size))) {
+        if (len > data_size) {
+            cerr << "Error reading file " << file_name << 
+                "  errno=" << strerror(errno) << endl;
+            exit(16);
+        }
+
+        // TODO: hash the packet data
+        string hash = "1";
+        string message = "COPY " + file_name + " ";
+        message += to_string(byte_offset * data_size) + " " + hash + " ";
+        message += string(buffer).substr(0, len);
+        sock->write(message.c_str(), message.length() + 1);
+        usleep(500);
+
+        byte_offset++;
+        cout << byte_offset * data_size<< endl;
+    }
+}
+
+void checkFile(C150DgmSocket *sock, string file_name, string file_path) {
+    string hash = make_hash(file_path);
+
+    try {
+        char incomingMessage[512];
+        ssize_t readlen = write_to_server_and_wait(sock, "CHECK " + file_name, incomingMessage);
+        if (readlen == 0) {
+            printf("Server not responding\n");
+            return;
+        } 
+        cout << "INCOMING: " << incomingMessage << endl;
+        string incoming(incomingMessage);
+        vector<string> arguments = split(incoming, ' ');
+        string command = arguments[0];
+        string server_file_name = arguments[1];
+        string incoming_hash = arguments[2];
+        
+        // TODO: add while loop incase they send up wrong msg
+        // if (command != "CHECK" or file_name != server_file_name) continue;
+
+        string msg = "EQUAL " + file_name + " ";
+        msg += (incoming_hash == hash) ? "1" : "0";
+        cout << "OUTGOING: " << msg << endl;
+        if (incoming_hash == hash) {
+            *GRADING << "File: " << file_name << " end-to-end check succeeded, attempt 1" << endl;
+        } else {
+            *GRADING << "File: " << file_name << " end-to-end check failed, attempt 1" << endl;
+        }
+
+        readlen = write_to_server_and_wait(sock, msg, incomingMessage);
+        if (readlen == 0) {
+            printf("Server not responding\n");
+            return;
+        } 
+
+        cout << "INCOMING: " << incomingMessage << endl;
+    }
+    catch (C150NetworkException& e) {
+        cerr << "caught C150NetworkException: " << e.formattedExplanation()
+                        << endl;
+    }
 }
