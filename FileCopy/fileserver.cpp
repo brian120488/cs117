@@ -23,15 +23,16 @@ void checkAndPrintMessage(ssize_t readlen, char *msg, ssize_t bufferlen);
 void processIncomingMessages(C150DgmSocket *sock, const string &programName, string targetdir, int file_nastiness);
 bool sendMessageWithRetries(C150DgmSocket *sock, const string &msg, int maxRetries);
 void open_or_create_file(NASTYFILE &file, string file_path);
+string make_data_hash(string data);
 
 const int maxRetries = 5;
-const int packetSize = 256;
+const int packetSize = 400;
 
 struct Message {
     string command;
     string file_name;
     int byte_offset;
-    char data[256];
+    char data[400];
     string hash;
 };
 
@@ -83,6 +84,7 @@ void processIncomingMessages(C150DgmSocket *sock, const string &programName, str
             *GRADING << "File: " << file_name << " received, beginning end-to-end check" << endl;
 
             sock->write(return_msg.c_str(), return_msg.length() + 1);  // +1 includes the null terminator
+
         } else if (arguments[0] == "EQUAL") {
             cout << arguments[1]  + " " + arguments[2] << endl;
             string file_name = arguments[1];
@@ -103,9 +105,18 @@ void processIncomingMessages(C150DgmSocket *sock, const string &programName, str
         } else if (arguments[0] == "COPY") {
             string file_name = arguments[1];
             int byte_offset = stoi(arguments[2]);
-            // string hash = arguments[3];
-            // cout << hash << endl;
+            string client_hash = arguments[3];
             string data = arguments[4];
+            
+            // char dataArray[400];
+            // strcpy(dataArray, data.c_str());
+            // string server_hash = make_data_hash(dataArray);
+            string server_hash = make_data_hash(data);
+
+            // cout << data << endl;
+            
+            string return_msg = server_hash;
+            sock->write(return_msg.c_str(), return_msg.length() + 1);
 
             // Open the file for writing (create or overwrite by default)
             NASTYFILE outputFile(file_nastiness); 
@@ -220,6 +231,21 @@ string make_hash(string file_path) {
     // Compute the SHA-1 hash
     unsigned char hash[SHA_DIGEST_LENGTH];
     SHA1(reinterpret_cast<const unsigned char*>(content.c_str()), content.length(), hash);
+
+    // Convert the binary hash to a hex string
+    std::stringstream hex_stream;
+    for (int i = 0; i < SHA_DIGEST_LENGTH; ++i) {
+        hex_stream << std::hex << std::setw(2) << std::setfill('0') << (int)hash[i];
+    }
+
+    // Return the hex string
+    return hex_stream.str();
+}
+
+string make_data_hash(string data) {
+    // Compute the SHA-1 hash
+    unsigned char hash[SHA_DIGEST_LENGTH];
+    SHA1(reinterpret_cast<const unsigned char*>(data.c_str()), data.length(), hash);
 
     // Convert the binary hash to a hex string
     std::stringstream hex_stream;

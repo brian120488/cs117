@@ -19,7 +19,7 @@ struct Message {
     string command;
     string file_name;
     int byte_offset;
-    char data[256];
+    char data[400];
     string hash;
 };
 
@@ -33,6 +33,7 @@ void openFile(NASTYFILE &file, string file_path, string mode);
 void closeFile(NASTYFILE &file, string file_path);
 void copyFile(C150DgmSocket *sock, NASTYFILE &file, string file_name);
 bool checkFile(C150DgmSocket *sock, string file_name, string file_path);
+string make_data_hash(string data);
 
 int main(int argc, char *argv[]) {
     GRADEME(argc, argv);
@@ -53,7 +54,8 @@ int main(int argc, char *argv[]) {
         string file_name = entry.path().filename().string();
         string file_path = string(srcdir) + "/" + file_name;
 
-        // if (file_name != "data1000") continue;
+        if (file_name == "warandpeace.txt") continue;
+        if (file_name == "data10000") continue;
 
         openFile(file, file_path, "rb");
 
@@ -62,7 +64,7 @@ int main(int argc, char *argv[]) {
         int retries = 0;
         // change to retries
         while (!isValid) {
-            cout << "Retries: " << retries << endl;
+            // cout << "Retries: " << retries << endl;
 
             copyFile(sock, file, file_name);
             isValid = checkFile(sock, file_name, file_path);
@@ -151,6 +153,21 @@ void print_hash(const string& obuf) {
     cout << endl;
 }
 
+string make_data_hash(string data) {
+    // Compute the SHA-1 hash
+    unsigned char hash[SHA_DIGEST_LENGTH];
+    SHA1(reinterpret_cast<const unsigned char*>(data.c_str()), data.length(), hash);
+
+    // Convert the binary hash to a hex string
+    std::stringstream hex_stream;
+    for (int i = 0; i < SHA_DIGEST_LENGTH; ++i) {
+        hex_stream << std::hex << std::setw(2) << std::setfill('0') << (int)hash[i];
+    }
+
+    // Return the hex string
+    return hex_stream.str();
+}
+
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 //
@@ -230,7 +247,7 @@ void checkArguments(int argc, char *argv[]) {
 }
 
 void copyFile(C150DgmSocket *sock, NASTYFILE &file, string file_name) {
-    const int data_size = 256;
+    const int data_size = 400;
     char buffer[data_size];
     int byte_offset = 0;
     int len;
@@ -241,15 +258,38 @@ void copyFile(C150DgmSocket *sock, NASTYFILE &file, string file_name) {
             exit(16);
         }
 
-        // TODO: hash the packet data
-        string hash = "1";
+        string bufferString(buffer);
+        bufferString = bufferString.substr(0, len);
+        string hash = make_data_hash(bufferString);
         string message = "COPY " + file_name + " ";
         message += to_string(byte_offset * data_size) + " " + hash + " ";
-        message += string(buffer).substr(0, len);
-        sock->write(message.c_str(), message.length() + 1);
-        usleep(800);
+        message += bufferString.substr(0, len);
 
+        cout << message.length() << endl;
+
+        char incomingMessage[512];
+        bool isValid = false;
+        int i = 0;
+        while (!isValid) {
+            // cout << i << endl;
+            ssize_t readlen = write_to_server_and_wait(sock, message, incomingMessage);
+            // cout << incomingMessage << endl;
+            if (readlen == 0) {
+                printf("Server not responding\n");
+                return;
+            } 
+            incomingMessage[readlen] = '\0';
+
+            string server_hash(incomingMessage);
+            // cout << "Hash1: " << hash << endl;
+            // cout << "Hash2: " << server_hash << endl << endl;
+            isValid = (hash == server_hash);
+            i+= 1;
+            // cout << string(buffer).substr(0, len) << endl;
+        }
+        // usleep(800);
         byte_offset++;
+        // cout << byte_offset << endl;
     }
 }
 
@@ -258,15 +298,22 @@ bool checkFile(C150DgmSocket *sock, string file_name, string file_path) {
 
     try {
         char incomingMessage[512];
-        ssize_t readlen = write_to_server_and_wait(sock, "CHECK " + file_name, incomingMessage);
-        if (readlen == 0) {
-            printf("Server not responding\n");
-            return false;
-        } 
-        // cout << "INCOMING: " << incomingMessage << endl;
-        string incoming(incomingMessage);
-        vector<string> arguments = split(incoming, ' ');
-        string command = arguments[0];
+
+        vector<string> arguments;
+        bool isValid1 = false;
+        ssize_t readlen;
+        while (!isValid1) {
+            readlen = write_to_server_and_wait(sock, "CHECK " + file_name, incomingMessage);
+            if (readlen == 0) {
+                printf("Server not responding\n");
+                return false;
+            } 
+            string incoming(incomingMessage);
+            arguments = split(incoming, ' ');
+            isValid1 = (arguments[0] == "CHECK");
+
+        }
+        // cout << "INCOMING1: " << incomingMessage << endl;
         string server_file_name = arguments[1];
         string incoming_hash = arguments[2];
         
@@ -275,6 +322,7 @@ bool checkFile(C150DgmSocket *sock, string file_name, string file_path) {
 
         string msg = "EQUAL " + file_name + " ";
         msg += (incoming_hash == hash) ? "1" : "0";
+        // cout << "Right hash: " << hash << endl;
         if (incoming_hash == hash) {
             *GRADING << "File: " << file_name << " end-to-end check succeeded, attempt 1" << endl;
         } else {
@@ -282,6 +330,9 @@ bool checkFile(C150DgmSocket *sock, string file_name, string file_path) {
         }
 
         readlen = write_to_server_and_wait(sock, msg, incomingMessage);
+        // cout << "OUTGOING: " <<msg << endl;
+        // cout << "INCOMING2: " << incomingMessage << endl;
+        // TODO: parse incoming to make sure it is right msg?
         if (readlen == 0) {
             printf("Server not responding\n");
             return false;
@@ -296,3 +347,4 @@ bool checkFile(C150DgmSocket *sock, string file_name, string file_path) {
 
     return false;
 }
+
