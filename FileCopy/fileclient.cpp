@@ -19,13 +19,12 @@ struct Message {
     string command;
     string file_name;
     int byte_offset;
-    char data[400];
+    char data[440];
     string hash;
 };
 
 void checkArguments(int argc, char *argv[]);
 string make_hash(string file_name);
-void print_hash(const string& obuf);
 ssize_t write_to_server_and_wait(C150DgmSocket *sock, string message, char *incomingMessage);
 vector<string> split(const string &str, char delimiter);
 void checkAndPrintMessage(ssize_t readlen, char *msg, ssize_t bufferlen);
@@ -59,13 +58,10 @@ int main(int argc, char *argv[]) {
 
         openFile(file, file_path, "rb");
 
-        // TODO: add retries
+        // TODO: change to max retries
         bool isValid = false;
         int retries = 0;
-        // change to retries
         while (!isValid) {
-            // cout << "Retries: " << retries << endl;
-
             copyFile(sock, file, file_name);
             isValid = checkFile(sock, file_name, file_path);
             
@@ -146,13 +142,6 @@ string make_hash(string file_path) {
     return hex_stream.str();
 }
 
-void print_hash(const string& obuf) {
-    for (size_t i = 0; i < obuf.size(); i++) {
-        printf("%02x", (unsigned char)obuf[i]);
-    }
-    cout << endl;
-}
-
 string make_data_hash(string data) {
     // Compute the SHA-1 hash
     unsigned char hash[SHA_DIGEST_LENGTH];
@@ -166,35 +155,6 @@ string make_data_hash(string data) {
 
     // Return the hex string
     return hex_stream.str();
-}
-
-
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-//
-//                     checkAndPrintMessage
-//
-//        Make sure length is OK, clean up response buffer
-//        and print it to standard output.
-//
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-void checkAndPrintMessage(ssize_t readlen, char *msg, ssize_t bufferlen) {
-    if (readlen == 0) {
-        throw C150NetworkException("Unexpected zero length read in client");
-    }
-
-    if (readlen > (int)(bufferlen)) {
-        throw C150NetworkException("Unexpected over length read in client");
-    }
-
-    if(msg[readlen-1] != '\0') {
-        throw C150NetworkException("Client received message that was not null terminated");     
-    };
-
-    string s(msg);
-    cleanString(s);
-
-    c150debug->printf(C150APPLICATION,"PRINTING RESPONSE: Response received is \"%s\"\n", s.c_str());
-    printf("Response received is \"%s\"\n", s.c_str());
 }
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -247,7 +207,7 @@ void checkArguments(int argc, char *argv[]) {
 }
 
 void copyFile(C150DgmSocket *sock, NASTYFILE &file, string file_name) {
-    const int data_size = 400;
+    const int data_size = 440;
     char buffer[data_size];
     int byte_offset = 0;
     int len;
@@ -265,15 +225,11 @@ void copyFile(C150DgmSocket *sock, NASTYFILE &file, string file_name) {
         message += to_string(byte_offset * data_size) + " " + hash + " ";
         message += bufferString.substr(0, len);
 
-        cout << message.length() << endl;
-
         char incomingMessage[512];
         bool isValid = false;
         int i = 0;
         while (!isValid) {
-            // cout << i << endl;
             ssize_t readlen = write_to_server_and_wait(sock, message, incomingMessage);
-            // cout << incomingMessage << endl;
             if (readlen == 0) {
                 printf("Server not responding\n");
                 return;
@@ -281,15 +237,11 @@ void copyFile(C150DgmSocket *sock, NASTYFILE &file, string file_name) {
             incomingMessage[readlen] = '\0';
 
             string server_hash(incomingMessage);
-            // cout << "Hash1: " << hash << endl;
-            // cout << "Hash2: " << server_hash << endl << endl;
             isValid = (hash == server_hash);
             i+= 1;
-            // cout << string(buffer).substr(0, len) << endl;
         }
         // usleep(800);
         byte_offset++;
-        // cout << byte_offset << endl;
     }
 }
 
@@ -313,7 +265,6 @@ bool checkFile(C150DgmSocket *sock, string file_name, string file_path) {
             isValid1 = (arguments[0] == "CHECK");
 
         }
-        // cout << "INCOMING1: " << incomingMessage << endl;
         string server_file_name = arguments[1];
         string incoming_hash = arguments[2];
         
@@ -322,7 +273,6 @@ bool checkFile(C150DgmSocket *sock, string file_name, string file_path) {
 
         string msg = "EQUAL " + file_name + " ";
         msg += (incoming_hash == hash) ? "1" : "0";
-        // cout << "Right hash: " << hash << endl;
         if (incoming_hash == hash) {
             *GRADING << "File: " << file_name << " end-to-end check succeeded, attempt 1" << endl;
         } else {
@@ -330,15 +280,13 @@ bool checkFile(C150DgmSocket *sock, string file_name, string file_path) {
         }
 
         readlen = write_to_server_and_wait(sock, msg, incomingMessage);
-        // cout << "OUTGOING: " <<msg << endl;
-        // cout << "INCOMING2: " << incomingMessage << endl;
         // TODO: parse incoming to make sure it is right msg?
         if (readlen == 0) {
             printf("Server not responding\n");
             return false;
         } 
 
-        return (incoming_hash == hash) ? true : false;
+        return (incoming_hash == hash);
     }
     catch (C150NetworkException& e) {
         cerr << "caught C150NetworkException: " << e.formattedExplanation()

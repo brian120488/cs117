@@ -26,13 +26,13 @@ void open_or_create_file(NASTYFILE &file, string file_path);
 string make_data_hash(string data);
 
 const int maxRetries = 5;
-const int packetSize = 400;
+const int packetSize = 440;
 
 struct Message {
     string command;
     string file_name;
     int byte_offset;
-    char data[400];
+    char data[440];
     string hash;
 };
 
@@ -108,12 +108,7 @@ void processIncomingMessages(C150DgmSocket *sock, const string &programName, str
             string client_hash = arguments[3];
             string data = arguments[4];
             
-            // char dataArray[400];
-            // strcpy(dataArray, data.c_str());
-            // string server_hash = make_data_hash(dataArray);
             string server_hash = make_data_hash(data);
-
-            // cout << data << endl;
             
             string return_msg = server_hash;
             sock->write(return_msg.c_str(), return_msg.length() + 1);
