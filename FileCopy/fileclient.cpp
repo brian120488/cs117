@@ -32,7 +32,7 @@ void checkAndPrintMessage(ssize_t readlen, char *msg, ssize_t bufferlen);
 void openFile(NASTYFILE &file, string file_path, string mode);
 void closeFile(NASTYFILE &file, string file_path);
 void copyFile(C150DgmSocket *sock, NASTYFILE &file, string file_name);
-void checkFile(C150DgmSocket *sock, string file_name, string file_path);
+bool checkFile(C150DgmSocket *sock, string file_name, string file_path);
 
 int main(int argc, char *argv[]) {
     GRADEME(argc, argv);
@@ -52,13 +52,15 @@ int main(int argc, char *argv[]) {
         NASTYFILE file(file_nastiness);  
         string file_name = entry.path().filename().string();
         string file_path = string(srcdir) + "/" + file_name;
-        
-        if (file_name != "data1000") continue;
-        cout << file_name << endl;
+
 
         openFile(file, file_path, "rb");
+
+        // TODO: add retries
         copyFile(sock, file, file_name);
-        // checkFile(sock, file_name, file_path);
+        bool isValid = checkFile(sock, file_name, file_path);
+        cout << file_name << ": " << isValid << endl;
+
         closeFile(file, file_path);
     }
 
@@ -149,43 +151,21 @@ void print_hash(const string& obuf) {
 //
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 void checkAndPrintMessage(ssize_t readlen, char *msg, ssize_t bufferlen) {
-    // 
-    // Except in case of timeouts, we're not expecting
-    // a zero length read
-    //
+
     if (readlen == 0) {
         throw C150NetworkException("Unexpected zero length read in client");
     }
 
-    // DEFENSIVE PROGRAMMING: we aren't even trying to read this much
-    // We're just being extra careful to check this
     if (readlen > (int)(bufferlen)) {
         throw C150NetworkException("Unexpected over length read in client");
     }
 
-    //
-    // Make sure server followed the rules and
-    // sent a null-terminated string (well, we could
-    // check that it's all legal characters, but 
-    // at least we look for the null)
-    //
     if(msg[readlen-1] != '\0') {
         throw C150NetworkException("Client received message that was not null terminated");     
     };
 
-    //
-    // Use a routine provided in c150utility.cpp to change any control
-    // or non-printing characters to "." (this is just defensive programming:
-    // if the server maliciously or inadvertently sent us junk characters, then we 
-    // won't send them to our terminal -- some 
-    // control characters can do nasty things!)
-    //
-    // Note: cleanString wants a C++ string, not a char*, so we make a temporary one
-    // here. Not super-fast, but this is just a demo program.
     string s(msg);
     cleanString(s);
-
-    // Echo the response on the console
 
     c150debug->printf(C150APPLICATION,"PRINTING RESPONSE: Response received is \"%s\"\n", s.c_str());
     printf("Response received is \"%s\"\n", s.c_str());
@@ -258,14 +238,13 @@ void copyFile(C150DgmSocket *sock, NASTYFILE &file, string file_name) {
         message += to_string(byte_offset * data_size) + " " + hash + " ";
         message += string(buffer).substr(0, len);
         sock->write(message.c_str(), message.length() + 1);
-        usleep(500);
+        usleep(800);
 
         byte_offset++;
-        cout << byte_offset * data_size<< endl;
     }
 }
 
-void checkFile(C150DgmSocket *sock, string file_name, string file_path) {
+bool checkFile(C150DgmSocket *sock, string file_name, string file_path) {
     string hash = make_hash(file_path);
 
     try {
@@ -273,9 +252,9 @@ void checkFile(C150DgmSocket *sock, string file_name, string file_path) {
         ssize_t readlen = write_to_server_and_wait(sock, "CHECK " + file_name, incomingMessage);
         if (readlen == 0) {
             printf("Server not responding\n");
-            return;
+            return false;
         } 
-        cout << "INCOMING: " << incomingMessage << endl;
+        // cout << "INCOMING: " << incomingMessage << endl;
         string incoming(incomingMessage);
         vector<string> arguments = split(incoming, ' ');
         string command = arguments[0];
@@ -287,7 +266,6 @@ void checkFile(C150DgmSocket *sock, string file_name, string file_path) {
 
         string msg = "EQUAL " + file_name + " ";
         msg += (incoming_hash == hash) ? "1" : "0";
-        cout << "OUTGOING: " << msg << endl;
         if (incoming_hash == hash) {
             *GRADING << "File: " << file_name << " end-to-end check succeeded, attempt 1" << endl;
         } else {
@@ -297,8 +275,12 @@ void checkFile(C150DgmSocket *sock, string file_name, string file_path) {
         readlen = write_to_server_and_wait(sock, msg, incomingMessage);
         if (readlen == 0) {
             printf("Server not responding\n");
-            return;
+            return false;
         } 
+
+        return (incoming_hash == hash) ? true : false;
+
+        // TODO: tell server we received confirmation
 
         cout << "INCOMING: " << incomingMessage << endl;
     }
@@ -306,4 +288,6 @@ void checkFile(C150DgmSocket *sock, string file_name, string file_path) {
         cerr << "caught C150NetworkException: " << e.formattedExplanation()
                         << endl;
     }
+
+    return false;
 }

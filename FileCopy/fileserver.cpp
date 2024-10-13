@@ -8,7 +8,8 @@
 #include <openssl/sha.h>  // For SHA1
 #include <vector>
 #include "c150nastyfile.h"
-
+#include <cstdio>
+#include <filesystem>
 
 using namespace std;
 using namespace C150NETWORK;
@@ -63,10 +64,8 @@ void processIncomingMessages(C150DgmSocket *sock, const string &programName, str
 
     while (1) {
         ssize_t readlen = sock->read(incomingMessage, sizeof(incomingMessage) - 1);
-        cout << incomingMessage;
-        if (readlen == 0) {
-            continue;
-        }
+        if (readlen == 0) continue;
+
         incomingMessage[readlen] = '\0';  // Ensure null termination
         vector<string> arguments = processMessage(incomingMessage);
 
@@ -85,15 +84,25 @@ void processIncomingMessages(C150DgmSocket *sock, const string &programName, str
         } else if (arguments[0] == "EQUAL") {
             cout << arguments[1]  + " " + arguments[2] << endl;
             string file_name = arguments[1];
+            string file_path = targetdir + "/" + file_name;
+            
             bool is_equal = (arguments[2] == "1");
+            if (is_equal && filesystem::exists(file_path + ".TMP")) {
+                string old_file_name = file_path + ".TMP";
+                rename(old_file_name.c_str(), file_path.c_str());
+            }
+                
 
             *GRADING << "File: " << arguments[1] << " end-to-end check ";
             *GRADING << ((is_equal) ? "succeeded" : "failed");
             *GRADING << endl;
 
-            //TODO: The server should acknowledge to the client
             return_msg = incomingMessage;
             sock->write(return_msg.c_str(), return_msg.length() + 1);
+
+
+
+
         } else if (arguments[0] == "COPY") {
             string file_name = arguments[1];
             int byte_offset = stoi(arguments[2]);
