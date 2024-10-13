@@ -53,12 +53,22 @@ int main(int argc, char *argv[]) {
         string file_name = entry.path().filename().string();
         string file_path = string(srcdir) + "/" + file_name;
 
+        // if (file_name != "data1000") continue;
 
         openFile(file, file_path, "rb");
 
         // TODO: add retries
-        copyFile(sock, file, file_name);
-        bool isValid = checkFile(sock, file_name, file_path);
+        bool isValid = false;
+        int retries = 0;
+        // change to retries
+        while (!isValid) {
+            cout << "Retries: " << retries << endl;
+
+            copyFile(sock, file, file_name);
+            isValid = checkFile(sock, file_name, file_path);
+            
+            retries += 1;
+        }
         cout << file_name << ": " << isValid << endl;
 
         closeFile(file, file_path);
@@ -151,7 +161,6 @@ void print_hash(const string& obuf) {
 //
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 void checkAndPrintMessage(ssize_t readlen, char *msg, ssize_t bufferlen) {
-
     if (readlen == 0) {
         throw C150NetworkException("Unexpected zero length read in client");
     }
@@ -279,10 +288,6 @@ bool checkFile(C150DgmSocket *sock, string file_name, string file_path) {
         } 
 
         return (incoming_hash == hash) ? true : false;
-
-        // TODO: tell server we received confirmation
-
-        cout << "INCOMING: " << incomingMessage << endl;
     }
     catch (C150NetworkException& e) {
         cerr << "caught C150NetworkException: " << e.formattedExplanation()

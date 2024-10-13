@@ -69,6 +69,8 @@ void processIncomingMessages(C150DgmSocket *sock, const string &programName, str
         incomingMessage[readlen] = '\0';  // Ensure null termination
         vector<string> arguments = processMessage(incomingMessage);
 
+        cout << arguments[0] << " " << arguments[1] << endl;
+
         // Checks file and sends back checksum
         if (arguments[0] == "CHECK") {
             string file_name = arguments[1];
@@ -91,7 +93,6 @@ void processIncomingMessages(C150DgmSocket *sock, const string &programName, str
                 string old_file_name = file_path + ".TMP";
                 rename(old_file_name.c_str(), file_path.c_str());
             }
-                
 
             *GRADING << "File: " << arguments[1] << " end-to-end check ";
             *GRADING << ((is_equal) ? "succeeded" : "failed");
@@ -99,10 +100,6 @@ void processIncomingMessages(C150DgmSocket *sock, const string &programName, str
 
             return_msg = incomingMessage;
             sock->write(return_msg.c_str(), return_msg.length() + 1);
-
-
-
-
         } else if (arguments[0] == "COPY") {
             string file_name = arguments[1];
             int byte_offset = stoi(arguments[2]);
@@ -111,10 +108,10 @@ void processIncomingMessages(C150DgmSocket *sock, const string &programName, str
             string data = arguments[4];
 
             // Open the file for writing (create or overwrite by default)
-            string file_path = targetdir + "/" + file_name + ".TMP";
             NASTYFILE outputFile(file_nastiness); 
-
+            string file_path = targetdir + "/" + file_name + ".TMP";
             open_or_create_file(outputFile, file_path);
+            
             outputFile.fseek(byte_offset, SEEK_SET);
             char arr[packetSize] = {0};
             int length = data.copy(arr, data.length());
@@ -216,6 +213,9 @@ string make_hash(string file_path) {
     std::stringstream buffer;
     buffer << t.rdbuf();
     std::string content = buffer.str();
+
+    // Close the file
+    t.close();
 
     // Compute the SHA-1 hash
     unsigned char hash[SHA_DIGEST_LENGTH];
