@@ -9,6 +9,7 @@
 #include <sys/stat.h>
 #include "c150nastydgmsocket.h"
 #include <unistd.h>
+#include <csignal>
 
 
 using namespace std;
@@ -53,8 +54,9 @@ int main(int argc, char *argv[]) {
         string file_name = entry.path().filename().string();
         string file_path = string(srcdir) + "/" + file_name;
 
-        if (file_name == "warandpeace.txt") continue;
-        if (file_name == "data10000") continue;
+        // if (file_name == "warandpeace.txt") continue;
+        // if (file_name == "data10000") continue;
+        if (file_name != "data1000") continue;
 
         openFile(file, file_path, "rb");
 
@@ -62,7 +64,9 @@ int main(int argc, char *argv[]) {
         bool isValid = false;
         int retries = 0;
         while (!isValid) {
+            *GRADING << "File: " << file_name << ", beginning transmission, attempt " << retries + 1 << endl;
             copyFile(sock, file, file_name);
+            *GRADING << "File: " << file_name << " transmission complete, waiting for end-to-end check, attempt " << retries + 1 << endl;
             isValid = checkFile(sock, file_name, file_path);
             
             retries += 1;
@@ -71,6 +75,8 @@ int main(int argc, char *argv[]) {
 
         closeFile(file, file_path);
     }
+
+    delete sock;
 
     return 0;
 }
@@ -89,10 +95,7 @@ ssize_t write_to_server_and_wait(C150DgmSocket *sock, string message, char *inco
     bool messageReceived = false;
     string file_name = split(message, ' ')[1];
     for (int retries = 0; retries < maxRetries && !messageReceived; retries++) {
-        *GRADING << "File: " << file_name << ", beginning transmission, attempt " << retries + 1 << endl;
         sock->write(message.c_str(), message.length() + 1); // +1 includes the null terminator
-        *GRADING << "File: " << file_name << " transmission complete, waiting for end-to-end check, attempt " << retries + 1 << endl;
-
         
         readlen = sock->read(incomingMessage, 512);
         if (readlen == 0) continue;

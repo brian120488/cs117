@@ -10,6 +10,7 @@
 #include "c150nastyfile.h"
 #include <cstdio>
 #include <filesystem>
+#include <csignal>
 
 using namespace std;
 using namespace C150NETWORK;
@@ -49,6 +50,7 @@ int main(int argc, char *argv[]) {
         C150DgmSocket *sock = new C150NastyDgmSocket(network_nastiness);
         sock->turnOnTimeouts(100);  
         processIncomingMessages(sock, argv[0], targetdir, file_nastiness);
+        delete sock;
     } catch(C150NetworkException& e) {
         c150debug->printf(C150ALWAYSLOG,"Caught C150NetworkException: %s\n",
                           e.formattedExplanation().c_str());
@@ -74,6 +76,7 @@ void processIncomingMessages(C150DgmSocket *sock, const string &programName, str
 
         // Checks file and sends back checksum
         if (arguments[0] == "CHECK") {
+            return;
             string file_name = arguments[1];
             string file_path = targetdir + "/" + file_name + ".TMP";
             string hash = make_hash(file_path);
@@ -97,8 +100,7 @@ void processIncomingMessages(C150DgmSocket *sock, const string &programName, str
             }
 
             *GRADING << "File: " << arguments[1] << " end-to-end check ";
-            *GRADING << ((is_equal) ? "succeeded" : "failed");
-            *GRADING << endl;
+            *GRADING << (is_equal ? "succeeded" : "failed") << endl;
 
             return_msg = incomingMessage;
             sock->write(return_msg.c_str(), return_msg.length() + 1);
