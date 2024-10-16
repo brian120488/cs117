@@ -11,7 +11,6 @@
 #include <unistd.h>
 #include <csignal>
 
-
 using namespace std;
 namespace fs = filesystem;
 using namespace C150NETWORK;
@@ -24,6 +23,9 @@ struct Message {
     string hash;
 };
 
+const int PACKET_SIZE = 440;
+const int MAX_RETRIES = 5;
+
 void checkArguments(int argc, char *argv[]);
 string make_hash(string file_name);
 ssize_t write_to_server_and_wait(C150DgmSocket *sock, string message, char *incomingMessage);
@@ -34,6 +36,7 @@ void closeFile(NASTYFILE &file, string file_path);
 void copyFile(C150DgmSocket *sock, NASTYFILE &file, string file_name);
 bool checkFile(C150DgmSocket *sock, string file_name, string file_path);
 string make_data_hash(string data);
+
 
 int main(int argc, char *argv[]) {
     GRADEME(argc, argv);
@@ -53,30 +56,19 @@ int main(int argc, char *argv[]) {
         NASTYFILE file(file_nastiness);  
         string file_name = entry.path().filename().string();
         string file_path = string(srcdir) + "/" + file_name;
-
-        // if (file_name == "warandpeace.txt") continue;
-        // if (file_name == "data10000") continue;
-        if (file_name != "data1000") continue;
-
         openFile(file, file_path, "rb");
 
-        // TODO: change to max retries
         bool isValid = false;
-        int retries = 0;
-        while (!isValid) {
+        for (int retries = 0; retries < 5 and !isValid; retries++) {
             *GRADING << "File: " << file_name << ", beginning transmission, attempt " << retries + 1 << endl;
             copyFile(sock, file, file_name);
             *GRADING << "File: " << file_name << " transmission complete, waiting for end-to-end check, attempt " << retries + 1 << endl;
             isValid = checkFile(sock, file_name, file_path);
-            
-            retries += 1;
         }
-        cout << file_name << ": " << isValid << endl;
 
+        cout << file_name << ": copy " << (isValid ? "successful." : "failed.") << endl;
         closeFile(file, file_path);
     }
-
-    delete sock;
 
     return 0;
 }
@@ -101,10 +93,6 @@ ssize_t write_to_server_and_wait(C150DgmSocket *sock, string message, char *inco
         if (readlen == 0) continue;
 
         incomingMessage[readlen] = '\0';
-        // NEEDSWORK
-        // while (!sock->timedout()) {
-        //     readlen = sock -> read(incomingMessage, 512);
-        // }
         messageReceived = true;
     }
     return readlen;
@@ -210,12 +198,11 @@ void checkArguments(int argc, char *argv[]) {
 }
 
 void copyFile(C150DgmSocket *sock, NASTYFILE &file, string file_name) {
-    const int data_size = 440;
-    char buffer[data_size];
+    char buffer[PACKET_SIZE];
     int byte_offset = 0;
     int len;
-    while ((len = file.fread(buffer, 1, data_size))) {
-        if (len > data_size) {
+    while ((len = file.fread(buffer, 1, PACKET_SIZE))) {
+        if (len > PACKET_SIZE) {
             cerr << "Error reading file " << file_name << 
                 "  errno=" << strerror(errno) << endl;
             exit(16);
@@ -225,25 +212,30 @@ void copyFile(C150DgmSocket *sock, NASTYFILE &file, string file_name) {
         bufferString = bufferString.substr(0, len);
         string hash = make_data_hash(bufferString);
         string message = "COPY " + file_name + " ";
-        message += to_string(byte_offset * data_size) + " " + hash + " ";
+        message += to_string(byte_offset * PACKET_SIZE) + " " + hash + " ";
         message += bufferString.substr(0, len);
 
         char incomingMessage[512];
-        bool isValid = false;
-        int i = 0;
-        while (!isValid) {
+        bool isValidHash = false;
+        for (int retries = 0; retries < MAX_RETRIES and !isValidHash; retries++) {
+            *GRADING << "File: " << file_name << " sending bytes " 
+                << byte_offset * PACKET_SIZE << "-" << (byte_offset + 1) * PACKET_SIZE - 1 << endl;
             ssize_t readlen = write_to_server_and_wait(sock, message, incomingMessage);
             if (readlen == 0) {
                 printf("Server not responding\n");
-                return;
+                exit(0);
             } 
             incomingMessage[readlen] = '\0';
 
             string server_hash(incomingMessage);
-            isValid = (hash == server_hash);
-            i+= 1;
+            isValidHash = (hash == server_hash);
         }
-        // usleep(800);
+
+        if (!isValidHash) {
+            printf("Server not responding with correct hash\n");
+            return;
+        }
+
         byte_offset++;
     }
 }
@@ -251,51 +243,38 @@ void copyFile(C150DgmSocket *sock, NASTYFILE &file, string file_name) {
 bool checkFile(C150DgmSocket *sock, string file_name, string file_path) {
     string hash = make_hash(file_path);
 
-    try {
-        char incomingMessage[512];
+    char incomingMessage[512];
+    ssize_t readlen;
 
-        vector<string> arguments;
-        bool isValid1 = false;
-        ssize_t readlen;
-        while (!isValid1) {
-            readlen = write_to_server_and_wait(sock, "CHECK " + file_name, incomingMessage);
-            if (readlen == 0) {
-                printf("Server not responding\n");
-                return false;
-            } 
-            string incoming(incomingMessage);
-            arguments = split(incoming, ' ');
-            isValid1 = (arguments[0] == "CHECK");
-
-        }
-        string server_file_name = arguments[1];
-        string incoming_hash = arguments[2];
-        
-        // TODO: add while loop incase they send up wrong msg
-        // if (command != "CHECK" or file_name != server_file_name) continue;
-
-        string msg = "EQUAL " + file_name + " ";
-        msg += (incoming_hash == hash) ? "1" : "0";
-        if (incoming_hash == hash) {
-            *GRADING << "File: " << file_name << " end-to-end check succeeded, attempt 1" << endl;
-        } else {
-            *GRADING << "File: " << file_name << " end-to-end check failed, attempt 1" << endl;
-        }
-
-        readlen = write_to_server_and_wait(sock, msg, incomingMessage);
-        // TODO: parse incoming to make sure it is right msg?
+    vector<string> arguments;
+    bool isCheckPacket = false;
+    while (!isCheckPacket) {
+        readlen = write_to_server_and_wait(sock, "CHECK " + file_name, incomingMessage);
         if (readlen == 0) {
             printf("Server not responding\n");
-            return false;
+            exit(0);
         } 
-
-        return (incoming_hash == hash);
+        string incoming(incomingMessage);
+        arguments = split(incoming, ' ');
+        isCheckPacket = (arguments[0] == "CHECK");
     }
-    catch (C150NetworkException& e) {
-        cerr << "caught C150NetworkException: " << e.formattedExplanation()
-                        << endl;
+    string server_file_name = arguments[1];
+    string incoming_hash = arguments[2];
+
+    string msg = "EQUAL " + file_name + " ";
+    msg += (incoming_hash == hash) ? "1" : "0";
+    if (incoming_hash == hash) {
+        *GRADING << "File: " << file_name << " end-to-end check succeeded, attempt 1" << endl;
+    } else {
+        *GRADING << "File: " << file_name << " end-to-end check failed, attempt 1" << endl;
     }
 
-    return false;
+    readlen = write_to_server_and_wait(sock, msg, incomingMessage);
+    if (readlen == 0) {
+        printf("Server not responding\n");
+        exit(0);
+    } 
+
+    return (incoming_hash == hash);
 }
 

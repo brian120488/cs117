@@ -13,6 +13,7 @@
 #include <csignal>
 
 using namespace std;
+namespace fs = filesystem;
 using namespace C150NETWORK;
 
 void checkArguments(int argc, char *argv[]);
@@ -20,14 +21,12 @@ vector<string> processMessage(char incomingMessage[512]);
 string make_hash(string file_name);
 vector<string> split(const string &str, char delimiter, int limit);
 C150DgmSocket* createSocket(int nastiness);
-void checkAndPrintMessage(ssize_t readlen, char *msg, ssize_t bufferlen);
 void processIncomingMessages(C150DgmSocket *sock, const string &programName, string targetdir, int file_nastiness);
-bool sendMessageWithRetries(C150DgmSocket *sock, const string &msg, int maxRetries);
 void open_or_create_file(NASTYFILE &file, string file_path);
 string make_data_hash(string data);
 
 const int maxRetries = 5;
-const int packetSize = 440;
+const int PACKET_SIZE = 440;
 
 struct Message {
     string command;
@@ -50,10 +49,7 @@ int main(int argc, char *argv[]) {
         C150DgmSocket *sock = new C150NastyDgmSocket(network_nastiness);
         sock->turnOnTimeouts(100);  
         processIncomingMessages(sock, argv[0], targetdir, file_nastiness);
-        delete sock;
     } catch(C150NetworkException& e) {
-        c150debug->printf(C150ALWAYSLOG,"Caught C150NetworkException: %s\n",
-                          e.formattedExplanation().c_str());
         cerr << argv[0] << ": caught C150NetworkException: " << e.formattedExplanation() << endl;
     }
 
@@ -68,17 +64,13 @@ void processIncomingMessages(C150DgmSocket *sock, const string &programName, str
     while (1) {
         ssize_t readlen = sock->read(incomingMessage, sizeof(incomingMessage) - 1);
         if (readlen == 0) continue;
-
         incomingMessage[readlen] = '\0';  // Ensure null termination
+
         vector<string> arguments = processMessage(incomingMessage);
-
-        cout << arguments[0] << " " << arguments[1] << endl;
-
-        // Checks file and sends back checksum
-        if (arguments[0] == "CHECK") {
-            return;
+        if (arguments[0] == "CHECK") { // Checks file and sends back checksum
             string file_name = arguments[1];
             string file_path = targetdir + "/" + file_name + ".TMP";
+            if (!fs::exists(file_path)) continue;
             string hash = make_hash(file_path);
             
             // Grade log receiving file 
@@ -86,15 +78,13 @@ void processIncomingMessages(C150DgmSocket *sock, const string &programName, str
             return_msg = "CHECK " + file_name + " " + hash;
             *GRADING << "File: " << file_name << " received, beginning end-to-end check" << endl;
 
-            sock->write(return_msg.c_str(), return_msg.length() + 1);  // +1 includes the null terminator
-
+            sock->write(return_msg.c_str(), return_msg.length() + 1);
         } else if (arguments[0] == "EQUAL") {
-            cout << arguments[1]  + " " + arguments[2] << endl;
             string file_name = arguments[1];
             string file_path = targetdir + "/" + file_name;
             
             bool is_equal = (arguments[2] == "1");
-            if (is_equal && filesystem::exists(file_path + ".TMP")) {
+            if (is_equal && fs::exists(file_path + ".TMP")) {
                 string old_file_name = file_path + ".TMP";
                 rename(old_file_name.c_str(), file_path.c_str());
             }
@@ -121,7 +111,7 @@ void processIncomingMessages(C150DgmSocket *sock, const string &programName, str
             open_or_create_file(outputFile, file_path);
             
             outputFile.fseek(byte_offset, SEEK_SET);
-            char arr[packetSize] = {0};
+            char arr[PACKET_SIZE] = {0};
             int length = data.copy(arr, data.length());
             int len = outputFile.fwrite(arr, 1, length);
             
@@ -131,65 +121,15 @@ void processIncomingMessages(C150DgmSocket *sock, const string &programName, str
                 exit(16);
             }
 
-
-            // TODO: close at last packet or have CHECK close
-            // if (outputFile.fclose() == 0) {
-            //     cout << "Finished writing file " << file_name <<endl;
-            // } else {
-            //     cerr << "Error closing output file " << file_name << 
-            //     " errno=" << strerror(errno) << endl;
-            //     exit(16);
-            // }
-
+            outputFile.fclose();
         } else {
             cout << "Invalid message" << endl;
         }
-
-        // bool success = sendMessageWithRetries(sock, hash, maxRetries);
-        // if (!success) {
-        //     throw C150NetworkException("Server is not responding after multiple attempts.");
-        // }
     }
-}
-
-// Function to send a message and handle retries
-bool sendMessageWithRetries(C150DgmSocket *sock, const string &msg, int maxRetries) {
-    ssize_t readlen;
-    char incomingMessage[512];
-    int retries = 0;
-    bool messageReceived = false;
-
-    while (retries < maxRetries && !messageReceived) {
-        c150debug->printf(C150APPLICATION, "Writing message: \"%s\"", msg.c_str());
-        sock->write(msg.c_str(), msg.length() + 1); // +1 includes the null terminator
-
-        c150debug->printf(C150APPLICATION, "Returned from write, doing read()");
-        readlen = sock->read(incomingMessage, sizeof(incomingMessage));
-
-        if (sock->timedout()) {
-            retries++;
-            c150debug->printf(C150APPLICATION, "Timeout occurred. Retrying (%i/%i)...\n", retries, maxRetries);
-        } else {
-            messageReceived = true;
-            checkAndPrintMessage(readlen, incomingMessage, sizeof(incomingMessage));
-
-            // Keep reading additional responses until timeout
-            while (1) {
-                readlen = sock->read(incomingMessage, sizeof(incomingMessage));
-                if (sock->timedout()) {
-                    c150debug->printf(C150APPLICATION, "No more packets received, timing out.\n");
-                    break;
-                }
-                checkAndPrintMessage(readlen, incomingMessage, sizeof(incomingMessage));
-            }
-        }
-    }
-
-    return messageReceived;
 }
 
 vector<string> split(const string &str, char delimiter, int limit = -1) {
-     vector<string> tokens;
+    vector<string> tokens;
     istringstream stream(str);
     string token;
     int count = 0;
@@ -255,61 +195,6 @@ string make_data_hash(string data) {
 }
 
 
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-//
-//                     checkAndPrintMessage
-//
-//        Make sure length is OK, clean up response buffer
-//        and print it to standard output.
-//
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
- 
-
-
-void
-checkAndPrintMessage(ssize_t readlen, char *msg, ssize_t bufferlen) {
-    // 
-    // Except in case of timeouts, we're not expecting
-    // a zero length read
-    //
-    if (readlen == 0) {
-        throw C150NetworkException("Unexpected zero length read in client");
-    }
-
-    // DEFENSIVE PROGRAMMING: we aren't even trying to read this much
-    // We're just being extra careful to check this
-    if (readlen > (int)(bufferlen)) {
-        throw C150NetworkException("Unexpected over length read in client");
-    }
-
-    //
-    // Make sure server followed the rules and
-    // sent a null-terminated string (well, we could
-    // check that it's all legal characters, but 
-    // at least we look for the null)
-    //
-    if(msg[readlen-1] != '\0') {
-        throw C150NetworkException("Client received message that was not null terminated");     
-    };
-
-    //
-    // Use a routine provided in c150utility.cpp to change any control
-    // or non-printing characters to "." (this is just defensive programming:
-    // if the server maliciously or inadvertently sent us junk characters, then we 
-    // won't send them to our terminal -- some 
-    // control characters can do nasty things!)
-    //
-    // Note: cleanString wants a C++ string, not a char*, so we make a temporary one
-    // here. Not super-fast, but this is just a demo program.
-    string s(msg);
-    cleanString(s);
-
-    // Echo the response on the console
-
-    c150debug->printf(C150APPLICATION,"PRINTING RESPONSE: Response received is \"%s\"\n", s.c_str());
-    printf("Response received is \"%s\"\n", s.c_str());
-
-}
 
 void checkArguments(int argc, char *argv[]) {
     if (argc != 4)  {
