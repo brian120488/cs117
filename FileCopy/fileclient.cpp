@@ -1,43 +1,51 @@
+// 
+//            fileclient.cpp
+//
+//     Author: Brian Yang and Manuel Pena
+//
+//     Program for client to send a file over a socket
+//     to a different computer running the fileserver 
+//     program.
+//
+//     
+//
+
 #include <string>
 #include <stdlib.h>
 #include "c150grading.h"
 #include <filesystem>
 #include "c150nastyfile.h"
 #include <fstream> 
-#include <openssl/sha.h>
 #include <dirent.h>
 #include <sys/stat.h>
 #include "c150nastydgmsocket.h"
 #include <unistd.h>
 #include <csignal>
+#include "processing.h"
 
 using namespace std;
 namespace fs = filesystem;
 using namespace C150NETWORK;
 
-struct Message {
-    string command;
-    string file_name;
-    int byte_offset;
-    char data[440];
-    string hash;
-};
-
 const int PACKET_SIZE = 440;
 const int MAX_RETRIES = 5;
 
 void checkArguments(int argc, char *argv[]);
-string make_hash(string file_name);
 ssize_t write_to_server_and_wait(C150DgmSocket *sock, string message, char *incomingMessage);
-vector<string> split(const string &str, char delimiter);
 void checkAndPrintMessage(ssize_t readlen, char *msg, ssize_t bufferlen);
 void openFile(NASTYFILE &file, string file_path, string mode);
 void closeFile(NASTYFILE &file, string file_path);
 void copyFile(C150DgmSocket *sock, NASTYFILE &file, string file_name);
-bool checkFile(C150DgmSocket *sock, string file_name, string file_path);
-string make_data_hash(string data);
+bool checkFile(C150DgmSocket *sock, string file_name, string file_path, int retries);
 
 
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+//
+//                         main
+//
+//         Main file for the fileclient program
+//
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 int main(int argc, char *argv[]) {
     GRADEME(argc, argv);
     checkArguments(argc, argv);
@@ -51,7 +59,7 @@ int main(int argc, char *argv[]) {
     sock -> setServerName(server);  
     sock -> turnOnTimeouts(100);
 
-    // read file - filecopy
+    // read files in the source directory and transmit to server in target
     for (const auto& entry : fs::directory_iterator(srcdir)) {
         NASTYFILE file(file_nastiness);  
         string file_name = entry.path().filename().string();
@@ -59,11 +67,12 @@ int main(int argc, char *argv[]) {
         openFile(file, file_path, "rb");
 
         bool isValid = false;
-        for (int retries = 0; retries < 5 and !isValid; retries++) {
+        // Sends file and retires until MAX_RETRIES or END-TO-END check is valid
+        for (int retries = 0; retries < MAX_RETRIES and !isValid; retries++) {
             *GRADING << "File: " << file_name << ", beginning transmission, attempt " << retries + 1 << endl;
             copyFile(sock, file, file_name);
             *GRADING << "File: " << file_name << " transmission complete, waiting for end-to-end check, attempt " << retries + 1 << endl;
-            isValid = checkFile(sock, file_name, file_path);
+            isValid = checkFile(sock, file_name, file_path, retries);
         }
 
         cout << file_name << ": copy " << (isValid ? "successful." : "failed.") << endl;
@@ -83,10 +92,9 @@ int main(int argc, char *argv[]) {
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 ssize_t write_to_server_and_wait(C150DgmSocket *sock, string message, char *incomingMessage) {
     ssize_t readlen;
-    int maxRetries = 5;
     bool messageReceived = false;
     string file_name = split(message, ' ')[1];
-    for (int retries = 0; retries < maxRetries && !messageReceived; retries++) {
+    for (int retries = 0; retries < MAX_RETRIES && !messageReceived; retries++) {
         sock->write(message.c_str(), message.length() + 1); // +1 includes the null terminator
         
         readlen = sock->read(incomingMessage, 512);
@@ -101,73 +109,12 @@ ssize_t write_to_server_and_wait(C150DgmSocket *sock, string message, char *inco
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 //
-//                            make_hash
+//                            openFile
 //
-//             Computes SHA-1 hash key for a given file 
+//        Opens a file and checks if it is opened correctly
 //        
 //
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-string make_hash(string file_path) {
-    // Open the file
-    ifstream t(file_path, ios::binary);
-    if (!t.is_open()) {
-        throw runtime_error("Unable to open file: " + file_path);
-    }
-
-    // Read the entire file content into a string
-    stringstream buffer;
-    buffer << t.rdbuf();
-    string content = buffer.str();
-
-    // Compute the SHA-1 hash
-    unsigned char hash[SHA_DIGEST_LENGTH];
-    SHA1(reinterpret_cast<const unsigned char*>(content.c_str()), content.length(), hash);
-
-    // Convert the binary hash to a hex string
-    stringstream hex_stream;
-    for (int i = 0; i < SHA_DIGEST_LENGTH; ++i) {
-        hex_stream << hex << setw(2) << setfill('0') << (int)hash[i];
-    }
-
-    // Return the hex string
-    return hex_stream.str();
-}
-
-string make_data_hash(string data) {
-    // Compute the SHA-1 hash
-    unsigned char hash[SHA_DIGEST_LENGTH];
-    SHA1(reinterpret_cast<const unsigned char*>(data.c_str()), data.length(), hash);
-
-    // Convert the binary hash to a hex string
-    std::stringstream hex_stream;
-    for (int i = 0; i < SHA_DIGEST_LENGTH; ++i) {
-        hex_stream << std::hex << std::setw(2) << std::setfill('0') << (int)hash[i];
-    }
-
-    // Return the hex string
-    return hex_stream.str();
-}
-
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-//
-//                            split
-//
-//        Split a string into tokens using a delimiter
-//        
-//
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-vector<string> split(const string &str, char delimiter) {
-    vector<string> tokens;
-    istringstream stream(str);
-    string token;
-    
-    while (getline(stream, token, delimiter)) {
-        tokens.push_back(token);
-    }
-    
-    return tokens;
-}
-
 void openFile(NASTYFILE &file, string file_path, string mode) {
     void *fopenretval = file.fopen(file_path.c_str(), "rb");  
     if (fopenretval == NULL) {
@@ -177,6 +124,14 @@ void openFile(NASTYFILE &file, string file_path, string mode) {
     }
 }
 
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+//
+//                            closeFile
+//
+//        Closes a file and checks it closed correctly
+//        
+//
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 void closeFile(NASTYFILE &file, string file_path) {
     if (file.fclose() != 0) {
         cerr << "Error closing input file " << file_path << 
@@ -185,6 +140,14 @@ void closeFile(NASTYFILE &file, string file_path) {
     }
 }
 
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+//
+//                           checkArguments
+//
+//        Checks if the commands are correct when running.
+//        
+//
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 void checkArguments(int argc, char *argv[]) {
     if (argc != 5) {
         fprintf(stderr,"Correct syntax is %s <server> <networknastiness> <filenastiness> <srcdir>\n", argv[0]);
@@ -197,17 +160,33 @@ void checkArguments(int argc, char *argv[]) {
     }
 }
 
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+//
+//                            copyFile
+//
+//        Handles the COPY header packet to send to server
+//        COPY packet includes:
+//          Header:      COPY
+//          File name:   NASTYFILE &file
+//          File offset: byte_offset 
+//          Hash:        hash  
+//          Data:        bufferString.susbtr(0, len)          
+//
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 void copyFile(C150DgmSocket *sock, NASTYFILE &file, string file_name) {
     char buffer[PACKET_SIZE];
     int byte_offset = 0;
     int len;
+
+    // Reads until eof, when len of fread is 0
     while ((len = file.fread(buffer, 1, PACKET_SIZE))) {
         if (len > PACKET_SIZE) {
             cerr << "Error reading file " << file_name << 
                 "  errno=" << strerror(errno) << endl;
             exit(16);
         }
-
+        
+        // Building COPY packet
         string bufferString(buffer);
         bufferString = bufferString.substr(0, len);
         string hash = make_data_hash(bufferString);
@@ -217,9 +196,9 @@ void copyFile(C150DgmSocket *sock, NASTYFILE &file, string file_name) {
 
         char incomingMessage[512];
         bool isValidHash = false;
+
+        // If the server returns invalid hash we will retry MAX_RETRIES 
         for (int retries = 0; retries < MAX_RETRIES and !isValidHash; retries++) {
-            *GRADING << "File: " << file_name << " sending bytes " 
-                << byte_offset * PACKET_SIZE << "-" << (byte_offset + 1) * PACKET_SIZE - 1 << endl;
             ssize_t readlen = write_to_server_and_wait(sock, message, incomingMessage);
             if (readlen == 0) {
                 printf("Server not responding\n");
@@ -240,14 +219,25 @@ void copyFile(C150DgmSocket *sock, NASTYFILE &file, string file_name) {
     }
 }
 
-bool checkFile(C150DgmSocket *sock, string file_name, string file_path) {
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+//
+//                            checkFile
+//
+//        Sends a packet that tells the server to perform
+//        END-TO-END check on the file .TMP in the server
+//        CHECK packet includes:
+//          Header:    CHECK
+//          File name: file_name
+// 
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+bool checkFile(C150DgmSocket *sock, string file_name, string file_path, int retries) {
     string hash = make_hash(file_path);
-
     char incomingMessage[512];
     ssize_t readlen;
-
     vector<string> arguments;
     bool isCheckPacket = false;
+
+    // Send check packet until the server responds
     while (!isCheckPacket) {
         readlen = write_to_server_and_wait(sock, "CHECK " + file_name, incomingMessage);
         if (readlen == 0) {
@@ -258,15 +248,20 @@ bool checkFile(C150DgmSocket *sock, string file_name, string file_path) {
         arguments = split(incoming, ' ');
         isCheckPacket = (arguments[0] == "CHECK");
     }
+
+    // Get filename and hash from server from split above
     string server_file_name = arguments[1];
     string incoming_hash = arguments[2];
 
+    // Send EQUAL packet to confirm if the CHECK is valid
     string msg = "EQUAL " + file_name + " ";
     msg += (incoming_hash == hash) ? "1" : "0";
-    if (incoming_hash == hash) {
-        *GRADING << "File: " << file_name << " end-to-end check succeeded, attempt 1" << endl;
+    if (incoming_hash == hash) {                                            
+        *GRADING << "File: " << file_name << " end-to-end check succeeded, attempt "
+                                                            << retries << endl;
     } else {
-        *GRADING << "File: " << file_name << " end-to-end check failed, attempt 1" << endl;
+        *GRADING << "File: " << file_name << " end-to-end check failed, attempt " 
+                                                            << retries << endl;
     }
 
     readlen = write_to_server_and_wait(sock, msg, incomingMessage);
@@ -275,6 +270,7 @@ bool checkFile(C150DgmSocket *sock, string file_name, string file_path) {
         exit(0);
     } 
 
+    // Return if the END-TO-END check failed 
     return (incoming_hash == hash);
 }
 

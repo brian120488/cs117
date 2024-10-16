@@ -1,3 +1,14 @@
+// 
+//            fileserver.cpp
+//
+//     Author: Brian Yang and Manuel Pena
+//
+//     Program for server to receive a file over a socket
+//     from a different computer running the fileclient 
+//     program.
+//
+//     
+//
 #include "c150nastydgmsocket.h"
 #include "c150debug.h"
 #include "c150grading.h"
@@ -5,12 +16,12 @@
 #include <cstdlib> 
 #include <sstream> 
 #include <iomanip> 
-#include <openssl/sha.h>  // For SHA1
 #include <vector>
 #include "c150nastyfile.h"
 #include <cstdio>
 #include <filesystem>
 #include <csignal>
+#include "processing.h"
 
 using namespace std;
 namespace fs = filesystem;
@@ -18,23 +29,15 @@ using namespace C150NETWORK;
 
 void checkArguments(int argc, char *argv[]);
 vector<string> processMessage(char incomingMessage[512]);
-string make_hash(string file_name);
-vector<string> split(const string &str, char delimiter, int limit);
 C150DgmSocket* createSocket(int nastiness);
 void processIncomingMessages(C150DgmSocket *sock, const string &programName, string targetdir, int file_nastiness);
 void open_or_create_file(NASTYFILE &file, string file_path);
-string make_data_hash(string data);
+void checkFile(vector<string> arguments, string targetdir, C150DgmSocket *sock, ofstream *GRADING);
+void checkEqual(vector<string> arguments, string targetdir, C150DgmSocket *sock, ofstream *GRADING);
+void copyFile(vector<string> arguments, string targetdir, C150DgmSocket *sock, ofstream *GRADING, int file_nastiness);
 
 const int maxRetries = 5;
 const int PACKET_SIZE = 440;
-
-struct Message {
-    string command;
-    string file_name;
-    int byte_offset;
-    char data[440];
-    string hash;
-};
 
 int main(int argc, char *argv[]) {
     GRADEME(argc, argv);
@@ -59,7 +62,6 @@ int main(int argc, char *argv[]) {
 // Function to process incoming messages and handle responses
 void processIncomingMessages(C150DgmSocket *sock, const string &programName, string targetdir, int file_nastiness) {
     char incomingMessage[512];
-    string return_msg;
 
     while (1) {
         ssize_t readlen = sock->read(incomingMessage, sizeof(incomingMessage) - 1);
@@ -68,134 +70,26 @@ void processIncomingMessages(C150DgmSocket *sock, const string &programName, str
 
         vector<string> arguments = processMessage(incomingMessage);
         if (arguments[0] == "CHECK") { // Checks file and sends back checksum
-            string file_name = arguments[1];
-            string file_path = targetdir + "/" + file_name + ".TMP";
-            if (!fs::exists(file_path)) continue;
-            string hash = make_hash(file_path);
-            
-            // Grade log receiving file 
-            *GRADING << "File: " << file_name << " starting to receive file" << endl;
-            return_msg = "CHECK " + file_name + " " + hash;
-            *GRADING << "File: " << file_name << " received, beginning end-to-end check" << endl;
-
-            sock->write(return_msg.c_str(), return_msg.length() + 1);
+            checkFile(arguments, targetdir, sock, GRADING);
         } else if (arguments[0] == "EQUAL") {
-            string file_name = arguments[1];
-            string file_path = targetdir + "/" + file_name;
-            
-            bool is_equal = (arguments[2] == "1");
-            if (is_equal && fs::exists(file_path + ".TMP")) {
-                string old_file_name = file_path + ".TMP";
-                rename(old_file_name.c_str(), file_path.c_str());
-            }
-
-            *GRADING << "File: " << arguments[1] << " end-to-end check ";
-            *GRADING << (is_equal ? "succeeded" : "failed") << endl;
-
-            return_msg = incomingMessage;
-            sock->write(return_msg.c_str(), return_msg.length() + 1);
+            checkEqual(arguments, targetdir, sock, GRADING);
         } else if (arguments[0] == "COPY") {
-            string file_name = arguments[1];
-            int byte_offset = stoi(arguments[2]);
-            string client_hash = arguments[3];
-            string data = arguments[4];
-            
-            string server_hash = make_data_hash(data);
-            
-            string return_msg = server_hash;
-            sock->write(return_msg.c_str(), return_msg.length() + 1);
-
-            // Open the file for writing (create or overwrite by default)
-            NASTYFILE outputFile(file_nastiness); 
-            string file_path = targetdir + "/" + file_name + ".TMP";
-            open_or_create_file(outputFile, file_path);
-            
-            outputFile.fseek(byte_offset, SEEK_SET);
-            char arr[PACKET_SIZE] = {0};
-            int length = data.copy(arr, data.length());
-            int len = outputFile.fwrite(arr, 1, length);
-            
-            if (len != length) {
-                cerr << "Error writing file " << file_path << 
-                    "  errno=" << strerror(errno) << endl;
-                exit(16);
-            }
-
-            outputFile.fclose();
+            copyFile(arguments, targetdir, sock, GRADING, file_nastiness);
         } else {
             cout << "Invalid message" << endl;
         }
     }
 }
 
-vector<string> split(const string &str, char delimiter, int limit = -1) {
-    vector<string> tokens;
-    istringstream stream(str);
-    string token;
-    int count = 0;
-    size_t pos = 0, prev_pos = 0;
-    
-    // Split tokens based on the delimiter
-    while (count != limit && (pos = str.find(delimiter, prev_pos)) != string::npos) {
-        tokens.push_back(str.substr(prev_pos, pos - prev_pos));
-        prev_pos = pos + 1;  // Move past the delimiter
-        count++;
-    }
-    
-    // If we've reached the limit or there are no more delimiters, append the remaining part of the string
-    if (prev_pos < str.size()) {
-        tokens.push_back(str.substr(prev_pos));
-    }
 
-    return tokens;
-}
-
-string make_hash(string file_path) {
-    // Open the file
-    std::ifstream t(file_path, std::ios::binary);
-    if (!t.is_open()) {
-        throw std::runtime_error("Unable to open file: " + file_path);
-    }
-
-    // Read the entire file content into a string
-    std::stringstream buffer;
-    buffer << t.rdbuf();
-    std::string content = buffer.str();
-
-    // Close the file
-    t.close();
-
-    // Compute the SHA-1 hash
-    unsigned char hash[SHA_DIGEST_LENGTH];
-    SHA1(reinterpret_cast<const unsigned char*>(content.c_str()), content.length(), hash);
-
-    // Convert the binary hash to a hex string
-    std::stringstream hex_stream;
-    for (int i = 0; i < SHA_DIGEST_LENGTH; ++i) {
-        hex_stream << std::hex << std::setw(2) << std::setfill('0') << (int)hash[i];
-    }
-
-    // Return the hex string
-    return hex_stream.str();
-}
-
-string make_data_hash(string data) {
-    // Compute the SHA-1 hash
-    unsigned char hash[SHA_DIGEST_LENGTH];
-    SHA1(reinterpret_cast<const unsigned char*>(data.c_str()), data.length(), hash);
-
-    // Convert the binary hash to a hex string
-    std::stringstream hex_stream;
-    for (int i = 0; i < SHA_DIGEST_LENGTH; ++i) {
-        hex_stream << std::hex << std::setw(2) << std::setfill('0') << (int)hash[i];
-    }
-
-    // Return the hex string
-    return hex_stream.str();
-}
-
-
-
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+//
+//                         checkArguments
+//
+//        Checks that the program is given 4 commands
+//        
+//
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 void checkArguments(int argc, char *argv[]) {
     if (argc != 4)  {
         fprintf(stderr,"Correct syntxt is: %s <networknastiness> <filenastiness> <targetdir>\n", argv[0]);
@@ -208,12 +102,28 @@ void checkArguments(int argc, char *argv[]) {
     }
 }
 
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+//
+//                            processMessage
+//
+//        Process data received from the client
+//        
+//
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 vector<string> processMessage(char incomingMessage[512]) {    
     string incoming(incomingMessage);
-    vector<string> arguments = split(incoming, ' ', 4);
+    vector<string> arguments = split_with_limit(incoming, ' ', 4);
     return arguments;
 }
 
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+//
+//                        open_or_create_file
+//
+//        Opens a file if it exists or creates a new one
+//        
+//
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 void open_or_create_file(NASTYFILE &file, string file_path) {
     void *fopenretval = file.fopen(file_path.c_str(), "r+b");
     if (fopenretval == NULL) {
@@ -224,4 +134,112 @@ void open_or_create_file(NASTYFILE &file, string file_path) {
             exit(12);
         }
     }
+}
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+//
+//                        checkFile
+//
+//        Receives a packet that from the client to perform
+//        END-TO-END check on the file .TMP in the server.
+//        CHECK packet includes:
+//          Header:    CHECK
+//          File name: file_name
+//        Returns via the socket a string of the hash of .TMP file 
+//        to the client
+//
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+void checkFile(vector<string> arguments, string targetdir, C150DgmSocket *sock, ofstream *GRADING) {
+    string file_name = arguments[1];
+    string file_path = targetdir + "/" + file_name + ".TMP";
+    if (!fs::exists(file_path)) return;
+    string hash = make_hash(file_path);
+    
+    // Grade log receiving file 
+    string return_msg = "CHECK " + file_name + " " + hash;
+    *GRADING << "File: " << file_name << " received, beginning end-to-end check" << endl;
+
+    sock->write(return_msg.c_str(), return_msg.length() + 1);
+}
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+//
+//                        checkEqual
+//
+//        Receives a EQUAL packet from the client on END-TO-END
+//        results. Renames .TMP file and confirms message
+//        to client.
+//        EQUAL packet includes:
+//          Header:    EQUAL
+//          File name: file_name
+//          Is equal:  is_equal
+//        Returns same message from client via the socket.
+//        
+//
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+void checkEqual(vector<string> arguments, string targetdir, C150DgmSocket *sock, ofstream *GRADING) {
+    string file_name = arguments[1];
+    string file_path = targetdir + "/" + file_name;
+    
+    bool is_equal = (arguments[2] == "1");
+    if (is_equal && fs::exists(file_path + ".TMP")) {
+        string old_file_name = file_path + ".TMP";
+        rename(old_file_name.c_str(), file_path.c_str());
+    }
+
+    *GRADING << "File: " << arguments[1] << " end-to-end check ";
+    *GRADING << (is_equal ? "succeeded" : "failed") << endl;
+
+    string return_msg = "EQUAL " + file_name + " " + arguments[2];
+    sock->write(return_msg.c_str(), return_msg.length() + 1);
+}
+
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+//
+//                            copyFile
+//
+//        Handles the COPY header packet received from the client
+//        COPY packet includes:
+//          Header:      COPY
+//          File name:   NASTYFILE &file
+//          File offset: byte_offset 
+//          Hash:        hash  
+//          Data:        File data from client
+//        Returns a hash of the Data from the packet to the
+//        client.         
+//
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+void copyFile(vector<string> arguments, string targetdir, C150DgmSocket *sock, ofstream *GRADING, int file_nastiness) {
+    string file_name = arguments[1];
+    int byte_offset = stoi(arguments[2]);
+    string client_hash = arguments[3];
+    string data = arguments[4];
+    
+    string server_hash = make_data_hash(data);
+    
+    string return_msg = server_hash;
+    sock->write(return_msg.c_str(), return_msg.length() + 1);
+
+    // Open the file for writing (create or overwrite by default)
+    NASTYFILE outputFile(file_nastiness); 
+    string file_path = targetdir + "/" + file_name + ".TMP";
+    open_or_create_file(outputFile, file_path);
+    
+    outputFile.fseek(byte_offset, SEEK_SET);
+    char arr[PACKET_SIZE] = {0};
+    int length = data.copy(arr, data.length());
+    int len = outputFile.fwrite(arr, 1, length);
+
+    if (byte_offset == 0) {
+        *GRADING << "File: " << file_name << " starting to receive file" << endl;
+    }
+    
+    if (len != length) {
+        cerr << "Error writing file " << file_path << 
+            "  errno=" << strerror(errno) << endl;
+        exit(16);
+    }
+
+    outputFile.fclose();
 }

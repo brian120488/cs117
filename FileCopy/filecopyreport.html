@@ -25,6 +25,23 @@
 <meta charset="utf-8"> 
 <title>Tufts CS 117 Assignment &#8212; File Copy Project Report</title>
 <link rel="stylesheet" type="text/css" href="https://www.cs.tufts.edu/comp/117/style/homework.css" >
+<!-- <style>
+    body {
+        font-family: Arial, sans-serif;
+        line-height: 1.6;
+        margin: 20px;
+    }
+    h2, h3, h4 {
+        color: #4CAF50;
+    }
+    ul {
+        margin-left: 20px;
+    }
+    .section-title {
+        margin-top: 20px;
+        font-size: 1.5em;
+    }
+</style> -->
 </head>
 
 <body class="homework">
@@ -125,19 +142,22 @@ on both the client and the server; if all you got working
 was the end-to-end check, then please tell us how to test your work. <em>Also: if high network nastiness messes up your ability to deal with file nastiness, you can give us two pairs: e.g. Test my client and server with networknastiness=4 and filenastiness=1 or networknastiness=0 and filenastiness=3)</em></li>
 <li class="a">
 <!-- replace XX and YY with the actual values -->
-Please test my client and server with: networknastiness=XX and filenastiness=YY.
+Please test my client with networknastiness=4 and filenastiness=4
+and server with networknastiness=3 and filenastiness=3.
+It takes about 9 minutes to complete on the sample test directory.
 </li>
 
 <li class="q">Is there anything else we should
 know about testing your code, or what you expect it to do
 (beyond what's explained in your report below)?</li>
 <li class="a">
-it is slow
+It takes about 9 minutes to complete on the sample test directory on the above 
+settings.
 </li>
 
 <li class="q">Did you get help from anyone other than your teammate? If "yes", then briefly explain who helped you and how.</li>
 <li class="a">
-We discussed our protocols with David.
+Yes, we asked Noah some questions about our runtime and coding style.
 </li>
 
 
@@ -151,40 +171,111 @@ We discussed our protocols with David.
 <!-- * * * * * * * * * * * * * * * * * * * * * -->
 <!--            REPORT GOES HERE               -->
 <!-- * * * * * * * * * * * * * * * * * * * * * -->
+<h2 id="reportbody">FileCopy Protocol</h2>
+    
+    <h3>Packet Types</h3>
 
-<h2 id="reportbody">Report</h2>
+    <h4>COPY Packet</h4>
+    <ul>
+        <li><strong>Purpose:</strong> Sends file data from client to server.</li>
+        <li><strong>Fields:</strong></li>
+        <ul>
+            <li>Command: "COPY"</li>
+            <li>File name: Name of the file being copied.</li>
+            <li>Byte offset: The byte position of the data in the file.</li>
+            <li>Hash of data: Hash key for integrity checks.</li>
+            <li>Data: Actual file data being transmitted.</li>
+        </ul>
+    </ul>
 
-<!-- Delete the entire paragraph below 
-     and replace it with your report. (Do NOT
-     keep the color:grey styling on your report! :-) -->
+    <h4>CHECK Packet</h4>
+    <ul>
+        <li><strong>Purpose:</strong> Requests the server to perform an end-to-end (e2e) check on the file being copied.</li>
+        <li><strong>Fields:</strong></li>
+        <ul>
+            <li>Command: "CHECK"</li>
+            <li>File name: Name of the file being verified.</li>
+        </ul>
+    </ul>
 
-<p style="color:grey">Replace this text with the body of your report. You can use &lt;h3>,  &lt;h4> and other HTML tags to format your report. A guide to what goes in this report is available in the <a href="filecopyassignment#report">preparing your report</a> section of the <a href="filecopyassignment">File Copy assignment page</a>. </p>
+    <h4>EQUAL Packet</h4>
+    <ul>
+        <li><strong>Purpose:</strong> Confirms whether the e2e check passed or failed.</li>
+        <li><strong>Fields:</strong></li>
+        <ul>
+            <li>Command: "EQUAL"</li>
+            <li>isEqual: Status of e2e check ("0" = failed, "1" = passed).</li>
+        </ul>
+    </ul>
 
-</div>
-</div>
+    <h3>Normal Operation Flow</h3>
+    <ul>
+        <li>Client sends a COPY packet with the file data.</li>
+        <li>The server receives the data, writes it to a temporary (TMP) file in the target directory, and returns a hash key to the client for validation.</li>
+        <li>Client validates the hash key. If the client does not agree with the hash, it resends the packet until it is correct.</li>
+        <li>Client sends a CHECK packet after sending all COPY packets.</li>
+        <li>The server performs an e2e check between the temporary file (TMP) and the source (SRC) file and returns the result.</li>
+        <li>Client sends an EQUAL packet:
+            <ul>
+                <li>If the e2e check passes (TRUE), the client sends "EQUAL" with "1" to confirm successful file copy.</li>
+                <li>If the check fails (FALSE), the client resends the entire file and restarts the process.</li>
+            </ul>
+        </li>
+        <li>Server sends back an EQUAL packet to confirm receipt of the EQUAL command.</li>
+    </ul>
+
+    <h3>Recovery Process</h3>
+    <ul>
+        <li>For each COPY packet, the server returns a hash key. If the hash is incorrect, the client resends the packet.</li>
+        <li>After the CHECK packet, if the e2e check fails, the client resends the entire file.</li>
+    </ul>
+
+    <h3>Packet Loss & Reordering Handling</h3>
+    <ul>
+        <li><strong>Lost Packets:</strong> Each packet is validated using an e2e check. If any packet is lost, the check will fail, and the client will resend the packet.</li>
+        <li><strong>Reordered Packets:</strong> Since the server is stateless and uses the byte offset to write data, reordered packets still reach the correct offset in the file.</li>
+    </ul>
+
+    <h3>Invariant for Correctness</h3>
+    <ul>
+        <li><strong>TMP file correctness:</strong> The e2e check ensures that any file without the .TMP suffix is correct.</li>
+        <li><strong>Packet Integrity:</strong> The e2e check must pass for every packet before moving forward.</li>
+    </ul>
+
+    <h3>Shortcomings</h3>
+    <ul>
+        <li><strong>Efficiency:</strong> The protocol works but is slow for high network or file nastiness levels, as it retries packets individually. We could instead implement batching, sending multiple packets, and then have the server only send one message packet back verifying the batch of packets.</li>
+        <li><strong>Performance Detail:</strong> Our code works for client network nastiness 4, client file nastiness 3, server network nastiness 3, and server file nastiness 3. It takes about 9 minutes to complete on the sample test directory.</li>
+        <li><strong>File Disk Issues:</strong> If the source file is read incorrectly, the protocol will pass the e2e check, but the copied file may be wrong.</li>
+        <li><strong>No Bit-Packing:</strong> Tokenizing the packet fields with spaces is inefficient compared to bit-packing and using structs.</li>
+    </ul>
+
+    <h3>Grading Logs</h3>
+    <ul>
+        <li><strong>Client Logs:</strong></li>
+        <ul>
+            <li>When it starts and finishes copying a file.</li>
+            <li>Success or failure of the e2e check.</li>
+        </ul>
+        <li><strong>Server Logs:</strong></li>
+        <ul>
+            <li>When it begins receiving a file.</li>
+            <li>Completion of the file and the result of the e2e check.</li>
+        </ul>
+    </ul>
+
+    <h3>Known Unhandled Cases</h3>
+    <ul>
+        <li><strong>High Network/File Nastiness:</strong> At higher levels, the code may fail to copy files but terminate without error.</li>
+        <li><strong>Termination on Server Issues:</strong> At network_nastiness=4, the client will time out and exit.</li>
+    </ul>
+
+    <h3>What We Learned</h3>
+    <p>We learned that it is difficult to implement fully robust protocols. We also discovered that it is challenging to find the right balance of correctness and efficiency. We learned the usefulness of e2e checks in not only debugging but also handling errors, no matter what they are, both known and unknown.</p>
+
+    <h3>Statement of Team Collaboration</h3>
+    <p>Both team members were present for all coding, and both worked out the design together.</p>
 </body>
 </html>
 
-
-
-
-The main part of the report will be an explanation of your approach, what you think you've achieved, and what we should expect when we test your code. We want to know what your code is doing, and we want you to explain why it does or does not work in particular cases. For example, if you know that delayed packets will cause your program to get confused as to which file it's working on, tell us. If you think you're handling that case, explain the technique you're using to keep things straight.
-
-Overall, your report should cover:
-
-Overview: what did you do? What worked and what didn't?
-Which cases do you think your code handles and why?
-Describe your protocol:
-What is the sequence of packets you send in the normal cases and for recovery?
-What is the structure of your packets? Briefly explain each significant field. You can copy/paste the actual structs if you like, but include enough commentary (in the structs or below it) that we can figure out what's going on.
-What's your approach to dealing with lost packets? Packets that are reordered?
-Are there any invariants that give you confidence in the correctness of your protocol (e.g. "My rename is done after my end-to-end check succeeds, so any TARGET file without a .TMP suffix is correct")
-Do you expect your code to succeed when there are errors reading or writing the disk? What ensures that it will succeed, or why do you think it might not?
-Are there bugs or shortcomings you know about? Are they indicated in comments in the code with NEEDSWORK? (see commenting and code quality)
-What should we look for in the grading logs? Please relate this to your explanation of the protocol you've invented (if you like, you can combine the two, indicating gradelog entries as you explain the protocol, or you can explain the gradelog separately).
-Which cases are you aware of (e.g. high nastiness levels or particular combinations of reordering) that you aren't trying to handle correctly? In such cases, will your code detect the problem and abort (OK) or will it silently produce incorrect results?
-If your code has to give up copying one file, will it go on and try others? This can be a good thing to do. Certain protocols will tend to succeed on short files, but not on longer ones. If this is true of yours, can you explain why? If you have this problem, what file sizes do you handle at which nastiness levels, and how long does it typically take for them to be copied?
-Are there any cases for which your code doesn't do what you expect? Do you have any intuition why that might be?
-What did you learn from this asssignment?
-Include anything else that will demonstrate your understanding of this assignment and your results. Your comments on the assignment, and suggestions for future revisions of it are also welcome. Also, please include a statement confirming that both team members were present for (substantially) all coding, and that both worked out the design together (obviously, you can do some individual design work, but it should be roughly balanced, and you and your team mate must make all final decisions together, and with shared understanding.)
 
