@@ -1,0 +1,11 @@
+data10 0
+data10000 1
+data1000 1
+data100 1
+data1 1
+independence.txt 1
+love.txt 1
+moor.txt 0
+romeo.txt 1
+tyger.txt 0
+warandpeace.txt 1
