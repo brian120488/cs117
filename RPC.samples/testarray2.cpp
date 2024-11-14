@@ -16,21 +16,27 @@
 // TO THE FUNCTIONS WE'RE IMPLEMENTING. THIS MAKES SURE THE
 // CODE HERE ACTUALLY MATCHES THE REMOTED INTERFACE
 
-#include "testarray1.idl"
+#include "testarray2.idl"
 #include "stdlib.h"
 #include <iostream>
 
 
-int sqrt(int x[24], int y[24]) {
-    int match = 0;
-    for (int i = 0; i < 24; i++) {
-        std::cout << x[i] << " " << y[i] << std::endl;
-        if (x[i] == y[i]) {
-            match++;
+int sqrt(int x[3], int y[3][2], int z[3][2]) {
+    int sum = 0;
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 2; j++) {
+            sum += y[i][j] + z[i][j];
         }
     }
-    return match;
+
+    for (int i = 0; i < 3; i++) {
+        sum += x[i];
+    }
+
+    return sum;
 }
+
+
 
 
 

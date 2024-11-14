@@ -39,7 +39,7 @@
 // TO THE FUNCTIONS WE'RE IMPLEMENTING. THIS MAKES SURE THE
 // CODE HERE ACTUALLY MATCHES THE REMOTED INTERFACE
 
-#include "testarray1.idl"
+#include "testarray2.idl"
 
 #include "rpcstubhelper.h"
 
@@ -73,14 +73,14 @@ Function *getFunctionFromStream(char *buffer, unsigned int bufSize);
   
 
 
-void __sqrt(int x[24], int y[24]) {
+void __sqrt(int x[3], int y[3][2], int z[3][2]) {
 
   //
   // Time to actually call the function 
   //
   c150debug->printf(C150RPCDEBUG,"testarray1.stub.cpp: invoking sqrt()");
   cout << "Sqrting...\n";
-  int output = sqrt(x, y);
+  int output = sqrt(x, y, z);
   cout << "OUTPUT: " << output << endl;
 
   //
@@ -132,18 +132,50 @@ int* string_to_array(string s) {
     s.erase(0, 1);
     s.pop_back();
 
-    int *arr = new int[24];
+    int *arr = new int[3];
     stringstream ss(s);
     string num;
     int index = 0;
     while (getline(ss, num, ' ')) {
-        if (index >= 24) break;  // Ensure no overflow in the array
+        if (index >= 3) break;  // Ensure no overflow in the array
         arr[index++] = stoi(num);
     }
     return arr;
 }
 
 
+int (*string_to_array2d(string s))[2] {
+    // remove []
+    cout << "STRING: " << s << endl;
+    s.erase(0, 1);
+    s.pop_back();
+
+    int (*arr)[2] = new int[3][2];
+
+    stringstream ss(s);
+    string num;
+    int row = 0, col = 0;
+
+    while (getline(ss, num, ' ')) {
+        // Remove any remaining brackets or spaces
+        num.erase(std::remove(num.begin(), num.end(), '['), num.end());
+        num.erase(std::remove(num.begin(), num.end(), ']'), num.end());
+        num.erase(std::remove(num.begin(), num.end(), ' '), num.end());
+        if (num == "") continue;
+        cout << "NUM: " << num << endl;
+        // Convert string to integer and assign to 2D array
+        arr[row][col] = std::stoi(num);
+
+        // Move to next column or row
+        col++;
+        if (col == 2) {  // Reset column and move to next row
+            col = 0;
+            row++;
+        }
+        if (row == 3) break;  // Stop if we have filled the 3x2 array
+    }
+    return arr;
+}
 //
 //                         dispatchFunction()
 //
@@ -153,6 +185,15 @@ void dispatchFunction() {
 
     cout << "In dispatch\n";
     char functionNameBuffer[50];
+
+    int (*arr)[2] = string_to_array2d("[[0 0 ] [0 0 ] [1 1 ] ]");
+    for (int r = 0; r < 3; r++) {
+        cout << "[";
+        for (int c = 0; c < 2; c++) {
+            cout << arr[r][c] << " ";
+        }
+        cout << "]";
+    }
 
     //
     // Read the function name from the stream -- note
@@ -166,14 +207,15 @@ void dispatchFunction() {
 
     // TODO: implement function that turns string array to array
     int *x = string_to_array(f.args[0]);
-    int *y = string_to_array(f.args[1]);
-    cout << f.name << "(" << f.args[0] << ", " << f.args[1] << endl;
+    int (*y)[2] = string_to_array2d(f.args[1]);
+    int (*z)[2] = string_to_array2d(f.args[2]);
+    cout << f.name << "(" << f.args[0] << ", " << f.args[1] << ", " << f.args[2] << endl;
     cout <<"hi\n";
     if (!RPCSTUBSOCKET-> eof()) {
         cout <<"hi2\n";
         if (f.name == "sqrt"){ 
             cout <<"hi3\n";
-            __sqrt(x, y);
+            __sqrt(x, y, z);
         }
         
         // else

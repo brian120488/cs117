@@ -15,10 +15,10 @@
 using namespace C150NETWORK;  // for all the comp150 utilities 
 using namespace std;
 
-string array_to_string(int arr[24]) {
+string array_to_string(int arr[3]) {
     stringstream ss;
     ss << "[";
-    for (int i = 0; i < 24; i++) {
+    for (int i = 0; i < 3; i++) {
         ss << arr[i];
         ss << " ";
     } 
@@ -26,9 +26,26 @@ string array_to_string(int arr[24]) {
     return ss.str();
 }
 
-int sqrt(int x[24], int y[24]) {
+string array2d_to_string(int x[3][2]) {
+    stringstream ss;
+    ss << "[";
+    for (int i = 0; i < 3; i++) {
+        ss << "[";
+        for (int j = 0; j < 2; j++) {
+            ss << x[i][j];
+            if (j < 1) ss << " ";  // Add comma between elements in the row
+        }
+        ss << "]";
+        if (i < 2) ss << " ";  // Add comma between rows
+    }
+    ss << "]";
+    return ss.str();
+}
+
+
+int sqrt(int x[3], int y[3][2], int z[3][2]) {
     char readBuffer[5];  // to read magic value DONE + null
-    string message = "sqrt(" + array_to_string(x) + " " + array_to_string(y) + ")";
+    string message = "sqrt(" + array_to_string(x) + " " + array2d_to_string(y) + " " + array2d_to_string(z) + ")";
     // string message = "sqrt(3, " + array_to_string(y) + ")";
 
     //
