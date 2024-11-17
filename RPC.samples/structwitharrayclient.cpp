@@ -14,7 +14,7 @@
 // AND STUBS, AND ALSO USED AS INPUT TO AUTOMATIC PROXY/STUB
 // GENERATOR PROGRAM
 
-#include "testarray2.idl"
+#include "structwitharray.idl"
 
 #include "rpcproxyhelper.h"
 
@@ -84,13 +84,15 @@ main(int argc, char *argv[]) {
         // 
         // Call (possibly remote) add
         //
-        printf("Calling sqrt(x,y,z)\n");
-        int x[3] = {0,0,0};
-        int y[3][2] = { {0, 0}, {0, 0}, {1, 1} };
-        int z[3][2] = { {0, 0}, {2, 0}, {3, 0} };
+        printf("Calling sqrt(saw)\n");
+        s saw = {
+            {0, 2},
+            {{0, 1, 2}, {3, 4, 5}},
+            {{{0, 1, 2, 3}, {4, 5, 6, 7}, {8, 9, 10, 11}}, {{12, 13, 14, 15}, {16, 17, 18, 19}, {20, 21, 22, 23}}}
+        };
 
-        result = sqrt(x, y, z); // remote call (we hope!)
-        printf("Returned from sqrt(x, y, z). Result=%d\n",result);
+        result = sqrt(saw); // remote call (we hope!)
+        printf("Returned from sqrt(saw). Result=%d\n",result);
     }
 
     //

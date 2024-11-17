@@ -1,5 +1,7 @@
 struct s {
-  int m1[4];
-  int m2[4][10];
-  int m3[4][10][100];
+  int m1[2];
+  int m2[2][3];
+  int m3[2][3][4];
 };
+
+int sqrt(s swa);

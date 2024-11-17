@@ -28,14 +28,40 @@ string array_to_string(int arr[24]) {
 
 int sqrt(int x[24], int y[24]) {
     char readBuffer[5];  // to read magic value DONE + null
-    string message = "sqrt(" + array_to_string(x) + " " + array_to_string(y) + ")";
-    // string message = "sqrt(3, " + array_to_string(y) + ")";
+    
+    string n = "sqrt";
+    RPCPROXYSOCKET->write(n.c_str(), n.length()+1); // write function name including null
 
-    //
-    // Send the Remote Call
-    //
-    //   c150debug->printf(C150RPCDEBUG,"arithmetic.proxy.cpp: " + message + " invoked");
-    RPCPROXYSOCKET->write(message.c_str(), message.length()+1); // write function name including null
+    for (int i = 0; i < 24; i++) {
+        std::ostringstream arg1;
+        arg1 << x[i];
+        cout << arg1.str() << endl;
+        RPCPROXYSOCKET->write(arg1.str().c_str(), arg1.str().length()+1); 
+    }
+
+    // char* arg1 = reinterpret_cast<char*>(x);
+    // cout << "LENGTH OF STRING: "<< strlen(arg1) << endl;
+    // RPCPROXYSOCKET->write(arg1, 24 * 4); 
+    // for (int i = 0; i < 24; i++) {
+    //     cout << arg1[i] << endl;
+    // }
+
+    for (int i = 0; i < 24; i++) {
+        std::ostringstream arg2;
+        arg2 << y[i];
+        cout << arg2.str() << endl;
+        RPCPROXYSOCKET->write(arg2.str().c_str(), arg2.str().length()+1); 
+    }
+
+
+    // string message = "sqrt(" + array_to_string(x) + " " + array_to_string(y) + ")";
+    // // string message = "sqrt(3, " + array_to_string(y) + ")";
+
+    // //
+    // // Send the Remote Call
+    // //
+    // //   c150debug->printf(C150RPCDEBUG,"arithmetic.proxy.cpp: " + message + " invoked");
+    // RPCPROXYSOCKET->write(message.c_str(), message.length()+1); // write function name including null
 
     //
     // Read the response

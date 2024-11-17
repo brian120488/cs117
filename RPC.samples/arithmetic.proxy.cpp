@@ -16,29 +16,25 @@ using namespace C150NETWORK;  // for all the comp150 utilities
 using namespace std;
 
 int add(int x, int y) {
-  char readBuffer[5];  // to read magic value DONE + null
-  string message = "add(" + to_string(x) + ", " + to_string(y) + ")";
+    char readBuffer[5];  // to read magic value DONE + null
 
-  //
-  // Send the Remote Call
-  //
-//   c150debug->printf(C150RPCDEBUG,"arithmetic.proxy.cpp: " + message + " invoked");
-  RPCPROXYSOCKET->write(message.c_str(), message.length()+1); // write function name including null
+    string n = "add";
+    
+    std::ostringstream arg1;
+    arg1 << reinterpret_cast<int*>(reinterpret_cast<char*>(x));
 
-  //
-  // Read the response
-  //
-//   c150debug->printf(C150RPCDEBUG,"arithmetic.proxy.cpp: " + message + " invocation sent, waiting for response");
-  RPCPROXYSOCKET->read(readBuffer, sizeof(readBuffer)); // only legal response is DONE
-  cout << readBuffer << endl;
-  //
-  // Check the response
-  //
-//   if (strncmp(readBuffer,"DONE", sizeof(readBuffer))!=0) {
-//     throw C150Exception("arithmetic.proxy: " + message + " received invalid response from the server");
-//   }
-//   c150debug->printf(C150RPCDEBUG,"arithmetic.proxy.cpp: " + message + " successful return from remote call");
+    char *arg2 = reinterpret_cast<char*>(y);
+    
+    RPCPROXYSOCKET->write(n.c_str(), n.length()+1); // write function name including null
+    RPCPROXYSOCKET->write(arg1.str().c_str(), arg1.str().length()+1); 
+    RPCPROXYSOCKET->write(arg2, strlen(arg2)+1); 
 
+    RPCPROXYSOCKET->read(readBuffer, sizeof(readBuffer)); // only legal response is DONE
+    cout << readBuffer << endl;
+
+    //   if (strncmp(readBuffer,"DONE", sizeof(readBuffer))!=0) {
+    //     throw C150Exception("arithmetic.proxy: " + message + " received invalid response from the server");
+    //   }
     return stoi(readBuffer);
 }
 

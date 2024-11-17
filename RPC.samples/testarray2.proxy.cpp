@@ -3,7 +3,7 @@
 // TO THE FUNCTIONS WE'RE IMPLEMENTING. THIS MAKES SURE THE
 // CODE HERE ACTUALLY MATCHES THE REMOTED INTERFACE
 
-#include "testarray1.idl"
+#include "testarray2.idl"
 
 #include "rpcproxyhelper.h"
 

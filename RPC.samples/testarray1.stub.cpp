@@ -55,7 +55,7 @@ struct Function {
     vector<string> args;
 };
 
-Function *getFunctionFromStream(char *buffer, unsigned int bufSize);
+void getFunctionNameFromStream(char *buffer, unsigned int bufSize);
 
 // ======================================================================
 //                             STUBS
@@ -152,27 +152,42 @@ int* string_to_array(string s) {
 void dispatchFunction() {
 
     cout << "In dispatch\n";
-    char functionNameBuffer[50];
+    char buffer[50];
 
     //
     // Read the function name from the stream -- note
     // REPLACE THIS WITH YOUR OWN LOGIC DEPENDING ON THE 
     // WIRE FORMAT YOU USE
     //
-    Function *fp = getFunctionFromStream(functionNameBuffer,sizeof(functionNameBuffer));
-    if (fp == NULL) return;
-    Function f = *fp;
+    cout <<"Hi\n";
+    getFunctionNameFromStream(buffer,sizeof(buffer));
+    char *f_name = buffer;
+    cout <<  f_name << endl;
+    
 
+    char buffer1[50];
+    int x[24];
+    for (int i = 0; i < 24; i++) {
+        getFunctionNameFromStream(buffer1,4);
+        x[i] = stoi(buffer1);
+        cout << "x[i]: " << x[i] << endl;
+    }
 
-    // TODO: implement function that turns string array to array
-    int *x = string_to_array(f.args[0]);
-    int *y = string_to_array(f.args[1]);
-    cout << f.name << "(" << f.args[0] << ", " << f.args[1] << endl;
-    cout <<"hi\n";
+    // getFunctionNameFromStream(buffer1,24 *4);
+    // int *x = reinterpret_cast<int*>(buffer1);
+    // for (size_t i = 0; i < 24; ++i) {
+    //     cout << x[i] << " ";
+    // }
+    
+    int y[24];
+    for (int i = 0; i < 24; i++) {
+        getFunctionNameFromStream(buffer1,4);
+        y[i] = stoi(buffer1);
+        cout << "y[i]: " << y[i] << endl;
+    }
+
     if (!RPCSTUBSOCKET-> eof()) {
-        cout <<"hi2\n";
-        if (f.name == "sqrt"){ 
-            cout <<"hi3\n";
+        if (strcmp(f_name, "sqrt") != 0){ 
             __sqrt(x, y);
         }
         
@@ -194,105 +209,29 @@ void dispatchFunction() {
 //   when eof is read from client.
 //
 
-Function *getFunctionFromStream(char *buffer, unsigned int bufSize) {  
+
+void getFunctionNameFromStream(char *buffer, unsigned int bufSize) {
+    unsigned int i;
+    char *bufp;    // next char to read
+    bool readnull;
+    ssize_t readlen;             // amount of data read from socket
+    
     //
     // Read a message from the stream
     // -1 in size below is to leave room for null
     //
-    Function *f = new Function;
-    bool readnull = false;
-    ssize_t readlen;             // amount of data read from socket
-    char *bufp = buffer;   // next char to read
-    for (unsigned i=0; i < bufSize; i++) {
+    readnull = false;
+    bufp = buffer;
+    for (i=0; i< bufSize; i++) {
         readlen = RPCSTUBSOCKET-> read(bufp, 1);  // read a byte
-        // check for eof or error
-        if (readlen == 0) return NULL;
-        if (*bufp == '(') {
-            f->name = string(buffer);
-            f->name.pop_back();
-            f->name.pop_back();
-            cout << "NAMEEE: " << f->name;
-            break;
-        }
+        // check for eof or error f
+        if (readlen == 0) break;
+
         // check for null and bump buffer pointer
         if (*bufp++ == '\0') {
             readnull = true;
             break;
         }
-    }
-
-    stack<string> stack;
-    string curr_str = "";
-    buffer = bufp;
-    while (true) {
-        int readlen =  RPCSTUBSOCKET->read(bufp, 1); // Reading 1 character at a time
-        if (readlen == 0) break; // Exit if there's nothing more to read
-        if (*bufp == ']') { // End of array
-            if (!curr_str.empty()) {
-                stack.push(curr_str);
-                curr_str = "";
-            }
-
-            string array_content = ""; 
-            while (!stack.empty() && stack.top() != "[") {
-                array_content = stack.top() + array_content;
-                stack.pop();
-            }
-            stack.pop(); // Remove the '['
-            stack.push("[" + array_content + "]");
-
-        } else if (*bufp == '}') { // End of struct
-            // if (!curr_str.empty()) {
-            //     stack.push(curr_str);
-            //     curr_str = "";
-            // }
-
-            // std::string struct_content = "";
-            // while (!stack.empty() && stack.top() != "{") {
-            //     struct_content = stack.top() + struct_content;
-            //     stack.pop();
-            // }
-            // if (!stack.empty()) stack.pop(); // Remove the '{'
-            // stack.push("{" + struct_content + "}");
-
-        } else if (*bufp == ')') { // End of function
-            if (!curr_str.empty()) {
-                stack.push(curr_str);
-                curr_str = "";
-            }
-        } else if (*bufp == '[') { // Element separator
-            stack.push("[");
-        } 
-        else if (*bufp == ' ') { // Element separator
-            if (!curr_str.empty()) {
-                stack.push(curr_str + " ");
-                curr_str = "";
-            }
-        } 
-        else if (*bufp == ',') { // Argument separator
-            if (!curr_str.empty()) {
-                stack.push(curr_str);
-                curr_str = "";
-            }
-        } else if (isalnum(*bufp)) { // Alphanumeric character
-            curr_str += *bufp;
-        }
-        if (*bufp++ == '\0') {
-            readnull = true;
-            break;
-        }
-
-        //  cout << "STACK: " << stack.top() << endl;
-    }
-
-    while (!stack.empty()) {
-        f->args.insert(f->args.begin(), stack.top());
-        stack.pop();
-    }
-
-    cout << "NAME: " << f->name << endl;
-    for (int i = 0; i <(int) f->args.size(); i++){
-        cout << "ARG " << i << ": " << f->args[i] << endl;
     }
 
   
@@ -321,8 +260,6 @@ Function *getFunctionFromStream(char *buffer, unsigned int bufSize) {
   //
   // Note that eof may be set here for our caller to check
   //
-    cout << "Returning func\n";
-    return f;
 }
 
 

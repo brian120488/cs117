@@ -39,13 +39,14 @@
 // TO THE FUNCTIONS WE'RE IMPLEMENTING. THIS MAKES SURE THE
 // CODE HERE ACTUALLY MATCHES THE REMOTED INTERFACE
 
-#include "arithmetic.idl"
+#include "structwitharray.idl"
 
 #include "rpcstubhelper.h"
 
 #include <cstdio>
 #include <cstring>
 #include "c150debug.h"
+#include <stack>
 
 using namespace C150NETWORK;  // for all the comp150 utilities 
 
@@ -67,14 +68,15 @@ void getFunctionNameFromStream(char *buffer, unsigned int bufSize);
   
 
 
-void __add(int x, int y) {
+void __sqrt(s swa) {
 
   //
   // Time to actually call the function 
   //
-  c150debug->printf(C150RPCDEBUG,"simplefunction.stub.cpp: invoking func1()");
-  cout << "Adding...\n";
-  int output = add(x, y);
+  c150debug->printf(C150RPCDEBUG,"testarray1.stub.cpp: invoking sqrt()");
+  cout << "Sqrting...\n";
+  int output = sqrt(swa);
+  cout << "OUTPUT: " << output << endl;
 
   //
   // Send the response to the client
@@ -88,40 +90,7 @@ void __add(int x, int y) {
   char outputBuffer[50]; // Buffer to hold the output string
   snprintf(outputBuffer, sizeof(outputBuffer), "%d", output); // Convert output to string
 
-  c150debug->printf(C150RPCDEBUG,"simplefunction.stub.cpp: returned from  func3() -- responding to client");
-  RPCSTUBSOCKET->write(outputBuffer, strlen(outputBuffer)+1);
-}
-
-void __subtract(int x, int y) {
-  c150debug->printf(C150RPCDEBUG,"simplefunction.stub.cpp: invoking func2()");
-  int output = subtract(x, y);
-
-  char outputBuffer[50]; // Buffer to hold the output string
-  snprintf(outputBuffer, sizeof(outputBuffer), "%d", output); // Convert output to string
-
-  c150debug->printf(C150RPCDEBUG,"simplefunction.stub.cpp: returned from  func3() -- responding to client");
-  RPCSTUBSOCKET->write(outputBuffer, strlen(outputBuffer)+1);
-}
-
-void __multiply(int x, int y) {
-  c150debug->printf(C150RPCDEBUG,"simplefunction.stub.cpp: invoking func3()");
-  int output = multiply(x, y);
-
-  char outputBuffer[50]; // Buffer to hold the output string
-  snprintf(outputBuffer, sizeof(outputBuffer), "%d", output); // Convert output to string
-
-  c150debug->printf(C150RPCDEBUG,"simplefunction.stub.cpp: returned from  func3() -- responding to client");
-  RPCSTUBSOCKET->write(outputBuffer, strlen(outputBuffer)+1);
-}
-
-void __divide(int x, int y) {
-
-  c150debug->printf(C150RPCDEBUG,"simplefunction.stub.cpp: invoking divide()");
-  int output = divide(x, y);
-  char outputBuffer[50]; // Buffer to hold the output string
-  snprintf(outputBuffer, sizeof(outputBuffer), "%d", output); // Convert output to string
-
-  c150debug->printf(C150RPCDEBUG,"simplefunction.stub.cpp: returned from  func3() -- responding to client");
+  c150debug->printf(C150RPCDEBUG,"testarray1.stub.cpp: returned from sqrt() -- responding to client");
   RPCSTUBSOCKET->write(outputBuffer, strlen(outputBuffer)+1);
 }
 
@@ -152,7 +121,92 @@ void __divide(int x, int y) {
 //
 // ======================================================================
 
+int* string_to_array(string s) {
+    // remove []
+    cout << "STRING: " << s << endl;
+    s.erase(0, 1);
+    s.pop_back();
 
+    int *arr = new int[2];
+    stringstream ss(s);
+    string num;
+    int index = 0;
+    while (getline(ss, num, ' ')) {
+        if (index >= 2) break;  // Ensure no overflow in the array
+        arr[index++] = stoi(num);
+    }
+    return arr;
+}
+
+
+int (*string_to_array2d(string s))[3] {
+    // remove []
+    cout << "STRING: " << s << endl;
+    s.erase(0, 1);
+    s.pop_back();
+
+    int (*arr)[3] = new int[2][3];
+
+    stringstream ss(s);
+    string num;
+    int row = 0, col = 0;
+
+    while (getline(ss, num, ' ')) {
+        // Remove any remaining brackets or spaces
+        num.erase(remove(num.begin(), num.end(), '['), num.end());
+        num.erase(remove(num.begin(), num.end(), ']'), num.end());
+        num.erase(remove(num.begin(), num.end(), ' '), num.end());
+        if (num == "") continue;
+        cout << "NUM: " << num << endl;
+        // Convert string to integer and assign to 2D array
+        arr[row][col] = stoi(num);
+
+        // Move to next column or row
+        col++;
+        if (col == 3) {  // Reset column and move to next row
+            col = 0;
+            row++;
+        }
+        if (row == 2) break;  // Stop if we have filled the 2x3 array
+    }
+    return arr;
+}
+
+int (*string_to_array3d(string s))[3][4] {
+    // Remove the outermost brackets
+    s.erase(0, 1);
+    s.pop_back();
+
+    int (*arr)[3][4] = new int[2][3][4];
+
+    stringstream ss(s);
+    string num;
+    int layer = 0, row = 0, col = 0;
+
+    while (getline(ss, num, ' ')) {
+        // Remove any remaining brackets or spaces
+        num.erase(remove(num.begin(), num.end(), '['), num.end());
+        num.erase(remove(num.begin(), num.end(), ']'), num.end());
+        num.erase(remove(num.begin(), num.end(), ' '), num.end());
+        if (num == "") continue;
+        
+        // Convert string to integer and assign to 3D array
+        arr[layer][row][col] = stoi(num);
+
+        // Move to next column, row, or layer as needed
+        col++;
+        if (col == 4) {   // Move to next row after filling columns
+            col = 0;
+            row++;
+        }
+        if (row == 3) {   // Move to next layer after filling rows
+            row = 0;
+            layer++;
+        }
+        if (layer == 2) break;  // Stop if we have filled the 2x3x4 array
+    }
+    return arr;
+}
 
 //
 //                         dispatchFunction()
@@ -163,49 +217,48 @@ void dispatchFunction() {
 
     cout << "In dispatch\n";
     char buffer[50];
-
-    //
-    // Read the function name from the stream -- note
-    // REPLACE THIS WITH YOUR OWN LOGIC DEPENDING ON THE 
-    // WIRE FORMAT YOU USE
-    //
-    cout <<"Hi\n";
     getFunctionNameFromStream(buffer,sizeof(buffer));
     char *f_name = buffer;
     cout <<  f_name << endl;
     
+
     char buffer1[50];
-    getFunctionNameFromStream(buffer1,4);
+    s saw;
+    for (int i = 0; i < 2; i++) {
+        getFunctionNameFromStream(buffer1,4);
+        saw.m1[i] = stoi(buffer1);
+        cout << saw.m1[i] << " ";
+    }
+    cout << endl;
+    
+    for (int i = 0; i < 2; i++) {
+        for (int j = 0; j < 3; j++) {
+            getFunctionNameFromStream(buffer1,4);
+            saw.m2[i][j] = stoi(buffer1);
+            cout << saw.m2[i][j] << " ";
+        }
+    }
+    cout << endl;
 
-    cout << buffer1 << endl;
-    // std::ostringstream oss;
-    // oss << reinterpret_cast<int*>(buffer1); // Convert the pointer to a string (its address)
-    // int x = strtol(oss.str().c_str(), nullptr, 16);
-    int x = strtol(buffer1, nullptr, 16);
-    cout << "AR: " << x << endl;
-
-    getFunctionNameFromStream(buffer1,4);
-    int y = *reinterpret_cast<int*>(buffer1);
-    cout << y << endl;
-
-    //
-    // We've read the function name, call the stub for the right one
-    // The stub will invoke the function and send response.
-    //
-
-    cout << f_name << " " << x << " " << y << endl;
+    for (int i = 0; i < 2; i++) {
+        for (int j = 0; j < 3; j++) {
+            for (int k = 0; k < 4; k++) {
+                getFunctionNameFromStream(buffer1,4);
+                saw.m3[i][j][k] = stoi(buffer1);
+                cout << saw.m3[i][j][k] << " ";
+            }
+        }
+    }
+    cout << endl;
     if (!RPCSTUBSOCKET-> eof()) {
-        if (strcmp(f_name,"add") != 0)
-            __add(x, y);
-        // else   if (f.name == "subtract")
-        // __subtract(x, y);
-        // else   if (f.name == "multiply")
-        // __multiply(x, y);
-        // else   if (f.name == "divide")
-        // __divide(x, y);
+        if (strcmp(f_name, "sqrt") == 0){ 
+            __sqrt(saw);
+        }
+        
         // else
         //   __badFunction(func.name.c_str());
     }
+
 }
 
  
@@ -240,31 +293,30 @@ void getFunctionNameFromStream(char *buffer, unsigned int bufSize) {
         // check for null and bump buffer pointer
         if (*bufp++ == '\0') {
             readnull = true;
-            cout << "I: " << i << endl;
             break;
         }
     }
-        
-  //
+
+    //
   // With TCP streams, we should never get a 0 length read
   // except with timeouts (which we're not setting in pingstreamserver)
   // or EOF
   //
-  if (readlen == 0) {
-    c150debug->printf(C150RPCDEBUG,"simplefunction.stub: read zero length message, checking EOF");
-    if (RPCSTUBSOCKET-> eof()) {
-      c150debug->printf(C150RPCDEBUG,"simplefunction.stub: EOF signaled on input");
+    if (readlen == 0) {
+        c150debug->printf(C150RPCDEBUG,"simplefunction.stub: read zero length message, checking EOF");
+        if (RPCSTUBSOCKET-> eof()) {
+        c150debug->printf(C150RPCDEBUG,"simplefunction.stub: EOF signaled on input");
 
-    } else {
-      throw C150Exception("simplefunction.stub: unexpected zero length read without eof");
+        } else {
+        throw C150Exception("simplefunction.stub: unexpected zero length read without eof");
+        }
     }
-  }
 
   //
   // If we didn't get a null, input message was poorly formatted
   //
-  else if (!readnull) 
-    throw C150Exception("simplefunction.stub: method name not null terminated or too long");
+    else if (!readnull) 
+        throw C150Exception("simplefunction.stub: method name not null terminated or too long");
 
   
   //
