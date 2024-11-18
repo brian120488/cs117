@@ -39,20 +39,18 @@
 // TO THE FUNCTIONS WE'RE IMPLEMENTING. THIS MAKES SURE THE
 // CODE HERE ACTUALLY MATCHES THE REMOTED INTERFACE
 
-#include "testarray2.idl"
+#include "structs.idl"
 
 #include "rpcstubhelper.h"
 
 #include <cstdio>
 #include <cstring>
 #include "c150debug.h"
-#include <stack>
 
 using namespace C150NETWORK;  // for all the comp150 utilities 
 
-
-void getFunctionNameFromStream(char *buffer, unsigned int bufSize);
-void getDataFromStream(char *buffer, unsigned int bufSize);
+void getFunctionNameFromStream(char *buffer, unsigned bufSize);
+void getDataFromStream(char *buffer, unsigned bufSize);
 
 // ======================================================================
 //                             STUBS
@@ -70,32 +68,25 @@ void getDataFromStream(char *buffer, unsigned int bufSize);
   
 
 
-void __sqrt(int x[3], int y[3][2], int z[3][2]) {
+void __findPerson(ThreePeople ps) {
+    cout << "Finding...\n";
+    Person output = findPerson(ps);
+    cout << "OUTPUT: " << output.firstname << endl;
 
-  //
-  // Time to actually call the function 
-  //
-  c150debug->printf(C150RPCDEBUG,"testarray1.stub.cpp: invoking sqrt()");
-  cout << "Sqrting...\n";
-  int output = sqrt(x, y, z);
-  cout << "OUTPUT: " << output << endl;
-
-  //
-  // Send the response to the client
-  //
-  // If func1 returned something other than void, this is
-  // where we'd send the return value back.
-  //
-  // c150debug->printf(C150RPCDEBUG,"simplefunction.stub.cpp: returned from  func1() -- responding to client");
-  // RPCSTUBSOCKET->write(doneBuffer, strlen(doneBuffer)+1);
-
-  char outputBuffer[50]; // Buffer to hold the output string
-  snprintf(outputBuffer, sizeof(outputBuffer), "%d", output); // Convert output to string
-
-  c150debug->printf(C150RPCDEBUG,"testarray1.stub.cpp: returned from sqrt() -- responding to client");
-  RPCSTUBSOCKET->write(outputBuffer, strlen(outputBuffer)+1);
+    char *outputBuffer = reinterpret_cast<char*>(&output);
+    RPCSTUBSOCKET->write(outputBuffer, sizeof(outputBuffer));
 }
 
+
+
+void __area(rectangle r) {
+  cout << "Finding...\n";
+  int output = area(r);
+  cout << "OUTPUT: " << output << endl;
+
+  char *outputBuffer = reinterpret_cast<char*>(&output);
+  RPCSTUBSOCKET->write(outputBuffer, sizeof(outputBuffer));
+}
 
 //
 //     __badFunction
@@ -130,44 +121,36 @@ void __sqrt(int x[3], int y[3][2], int z[3][2]) {
 //   Called when we're ready to read a new invocation request from the stream
 //
 void dispatchFunction() {
+    cout << "In dispatch\n";
     char buffer[50];
-    getFunctionNameFromStream(buffer, sizeof(buffer));
+    getFunctionNameFromStream(buffer,sizeof(buffer));
     string f_name(buffer);
 
-    char buffer1[4*3];
-    getDataFromStream(buffer1, sizeof(buffer1));
-    int *x = reinterpret_cast<int*>(buffer1);
-
-    char buffer2[4*3*2];
-    getDataFromStream(buffer2, sizeof(buffer2));
-    int (*y)[2] = reinterpret_cast<int(*)[2]>(buffer2);
-
-    char buffer3[4*3*2];
-    getDataFromStream(buffer3, sizeof(buffer3));
-    int (*z)[2] = reinterpret_cast<int(*)[2]>(buffer3);
 
     if (!RPCSTUBSOCKET-> eof()) {
-        if (f_name == "sqrt") { 
-            __sqrt(x, y, z);
+        if (f_name == "findPerson") {
+            cout << "in person" << endl;
+            // alignas(ThreePeople) char buffer1[sizeof(ThreePeople)];
+            char buffer1[sizeof(ThreePeople)];
+            getDataFromStream(buffer1,sizeof(buffer1));
+            cout <<"done"<<endl;
+            ThreePeople *ps = reinterpret_cast<ThreePeople*>(buffer1);
+            cout << alignof(buffer1) << endl;
+            cout <<"done"<<endl;
+            ThreePeople p = *ps;
+            __findPerson(p);
+        } else if (f_name == "area") {
+            cout << "in area" << endl;
+            char buffer1[sizeof(rectangle)];
+            getDataFromStream(buffer1, sizeof(buffer1));
+            rectangle r = *reinterpret_cast<rectangle*>(buffer1);
+            cout << r.x << " " << r.y << endl;
+            __area(r);
+        } else {
+            cout << "actual name " << f_name << endl;
         }
-        // else
-        //   __badFunction(func.name.c_str());
     }
-
 }
-
- 
-//
-//                   getFunctionNamefromStream
-//
-//   Helper routine to read function name from the stream. 
-//   Note that this code is the same for all stubs, so can be generated
-//   as boilerplate.
-//
-//   Important: this routine must leave the sock open but at EOF
-//   when eof is read from client.
-//
-
 
 void getFunctionNameFromStream(char *buffer, unsigned bufSize) {
     char *bufp = buffer;     
@@ -179,14 +162,8 @@ void getFunctionNameFromStream(char *buffer, unsigned bufSize) {
     }
 }
 
-
-
-void getDataFromStream(char *buffer, unsigned int bufSize) {
+void getDataFromStream(char *buffer, unsigned bufSize) {
     char *bufp = buffer;        
-    ssize_t readlen;
-    for (unsigned i = 0; i < bufSize; i++) {
-        readlen = RPCSTUBSOCKET->read(bufp, 1);
-        if (readlen == 0) break;
-        bufp++;
-    }
+    RPCSTUBSOCKET->read(bufp, bufSize);
 }
+

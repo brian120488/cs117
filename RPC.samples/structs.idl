@@ -1,3 +1,6 @@
+#include <string>
+using namespace std;
+
 struct Person {string firstname; string lastname; int age;};
 
 struct ThreePeople {

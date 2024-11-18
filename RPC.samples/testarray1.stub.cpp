@@ -50,12 +50,9 @@
 
 using namespace C150NETWORK;  // for all the comp150 utilities 
 
-struct Function {
-    string name;
-    vector<string> args;
-};
 
 void getFunctionNameFromStream(char *buffer, unsigned int bufSize);
+void getDataFromStream(char *buffer, unsigned int bufSize);
 
 // ======================================================================
 //                             STUBS
@@ -126,23 +123,6 @@ void __sqrt(int x[24], int y[24]) {
 //
 // ======================================================================
 
-int* string_to_array(string s) {
-    // remove []
-    cout << "STRING: " << s << endl;
-    s.erase(0, 1);
-    s.pop_back();
-
-    int *arr = new int[24];
-    stringstream ss(s);
-    string num;
-    int index = 0;
-    while (getline(ss, num, ' ')) {
-        if (index >= 24) break;  // Ensure no overflow in the array
-        arr[index++] = stoi(num);
-    }
-    return arr;
-}
-
 
 //
 //                         dispatchFunction()
@@ -150,47 +130,22 @@ int* string_to_array(string s) {
 //   Called when we're ready to read a new invocation request from the stream
 //
 void dispatchFunction() {
-
-    cout << "In dispatch\n";
     char buffer[50];
+    getFunctionNameFromStream(buffer, sizeof(buffer));
+    string f_name(buffer);
 
-    //
-    // Read the function name from the stream -- note
-    // REPLACE THIS WITH YOUR OWN LOGIC DEPENDING ON THE 
-    // WIRE FORMAT YOU USE
-    //
-    cout <<"Hi\n";
-    getFunctionNameFromStream(buffer,sizeof(buffer));
-    char *f_name = buffer;
-    cout <<  f_name << endl;
-    
+    char buffer1[4*24];
+    getDataFromStream(buffer1, sizeof(buffer1));
+    int *x = reinterpret_cast<int*>(buffer1);
 
-    char buffer1[50];
-    int x[24];
-    for (int i = 0; i < 24; i++) {
-        getFunctionNameFromStream(buffer1,4);
-        x[i] = stoi(buffer1);
-        cout << "x[i]: " << x[i] << endl;
-    }
-
-    // getFunctionNameFromStream(buffer1,24 *4);
-    // int *x = reinterpret_cast<int*>(buffer1);
-    // for (size_t i = 0; i < 24; ++i) {
-    //     cout << x[i] << " ";
-    // }
-    
-    int y[24];
-    for (int i = 0; i < 24; i++) {
-        getFunctionNameFromStream(buffer1,4);
-        y[i] = stoi(buffer1);
-        cout << "y[i]: " << y[i] << endl;
-    }
+    char buffer2[4*24];
+    getDataFromStream(buffer2, sizeof(buffer2));
+    int *y = reinterpret_cast<int*>(buffer2);
 
     if (!RPCSTUBSOCKET-> eof()) {
-        if (strcmp(f_name, "sqrt") != 0){ 
+        if (f_name == "sqrt") { 
             __sqrt(x, y);
         }
-        
         // else
         //   __badFunction(func.name.c_str());
     }
@@ -210,56 +165,24 @@ void dispatchFunction() {
 //
 
 
-void getFunctionNameFromStream(char *buffer, unsigned int bufSize) {
-    unsigned int i;
-    char *bufp;    // next char to read
-    bool readnull;
-    ssize_t readlen;             // amount of data read from socket
-    
-    //
-    // Read a message from the stream
-    // -1 in size below is to leave room for null
-    //
-    readnull = false;
-    bufp = buffer;
-    for (i=0; i< bufSize; i++) {
-        readlen = RPCSTUBSOCKET-> read(bufp, 1);  // read a byte
-        // check for eof or error f
+void getFunctionNameFromStream(char *buffer, unsigned bufSize) {
+    char *bufp = buffer;     
+    ssize_t readlen;  
+    for (unsigned i = 0; i < bufSize; i++) {
+        readlen = RPCSTUBSOCKET->read(bufp, 1);
         if (readlen == 0) break;
-
-        // check for null and bump buffer pointer
-        if (*bufp++ == '\0') {
-            readnull = true;
-            break;
-        }
+        if (*bufp++ == '\0') break;
     }
-
-  
-  //
-  // With TCP streams, we should never get a 0 length read
-  // except with timeouts (which we're not setting in pingstreamserver)
-  // or EOF
-  //
-    if (readlen == 0) {
-        c150debug->printf(C150RPCDEBUG,"simplefunction.stub: read zero length message, checking EOF");
-        if (RPCSTUBSOCKET-> eof()) {
-        c150debug->printf(C150RPCDEBUG,"simplefunction.stub: EOF signaled on input");
-
-        } else {
-        throw C150Exception("simplefunction.stub: unexpected zero length read without eof");
-        }
-    }
-
-  //
-  // If we didn't get a null, input message was poorly formatted
-  //
-    else if (!readnull) 
-        throw C150Exception("simplefunction.stub: method name not null terminated or too long");
-
-  
-  //
-  // Note that eof may be set here for our caller to check
-  //
 }
 
 
+
+void getDataFromStream(char *buffer, unsigned int bufSize) {
+    char *bufp = buffer;        
+    ssize_t readlen;
+    for (unsigned i = 0; i < bufSize; i++) {
+        readlen = RPCSTUBSOCKET->read(bufp, 1);
+        if (readlen == 0) break;
+        bufp++;
+    }
+}

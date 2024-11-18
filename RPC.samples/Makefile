@@ -44,7 +44,7 @@ CPPFLAGS = -g -Wall -Werror -I$(C150IDSRPC) -I$(C150LIB)
 LDFLAGS = 
 INCLUDES = $(C150LIB)c150streamsocket.h $(C150LIB)c150network.h $(C150LIB)c150exceptions.h $(C150LIB)c150debug.h $(C150LIB)c150utility.h $(C150LIB)c150grading.h $(C150IDSRPC)IDLToken.h $(C150IDSRPC)tokenizeddeclarations.h  $(C150IDSRPC)tokenizeddeclaration.h $(C150IDSRPC)declarations.h $(C150IDSRPC)declaration.h $(C150IDSRPC)functiondeclaration.h $(C150IDSRPC)typedeclaration.h $(C150IDSRPC)arg_or_member_declaration.h rpcproxyhelper.h rpcstubhelper.h simplefunction.idl arithmetic.idl floatarithmetic.idl
 
-all: pingstreamclient pingstreamserver idldeclarationtst simplefunctionclient simplefunctionserver idl_to_json arithmeticclient arithmeticserver testarray1client testarray1server testarray2client testarray2server structwitharrayclient structwitharrayserver
+all: pingstreamclient pingstreamserver idldeclarationtst simplefunctionclient simplefunctionserver idl_to_json arithmeticclient arithmeticserver testarray1client testarray1server testarray2client testarray2server structwitharrayclient structwitharrayserver structsclient structsserver
 
 ########################################################################
 #
@@ -117,6 +117,12 @@ structwitharrayclient: structwitharrayclient.o rpcproxyhelper.o structwitharray.
 
 structwitharrayserver: structwitharray.stub.o rpcserver.o rpcstubhelper.o structwitharray.o  $(C150AR) $(C150IDSRPCAR)  $(INCLUDES)
 	$(CPP) -o structwitharrayserver rpcserver.o structwitharray.stub.o structwitharray.o rpcstubhelper.o $(C150AR) $(C150IDSRPCAR) 
+
+structsclient: structsclient.o rpcproxyhelper.o structs.proxy.o  $(C150AR) $(C150IDSRPCAR)  $(INCLUDES)
+	$(CPP) -o structsclient structsclient.o rpcproxyhelper.o structs.proxy.o  $(C150AR) $(C150IDSRPCAR) 
+
+structsserver: structs.stub.o rpcserver.o rpcstubhelper.o structs.o  $(C150AR) $(C150IDSRPCAR)  $(INCLUDES)
+	$(CPP) -o structsserver rpcserver.o structs.stub.o structs.o rpcstubhelper.o $(C150AR) $(C150IDSRPCAR) 
 
 ########################################################################
 #

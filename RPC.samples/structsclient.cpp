@@ -14,7 +14,7 @@
 // AND STUBS, AND ALSO USED AS INPUT TO AUTOMATIC PROXY/STUB
 // GENERATOR PROGRAM
 
-#include "structwitharray.idl"
+#include "structs.idl"
 
 #include "rpcproxyhelper.h"
 
@@ -74,25 +74,17 @@ main(int argc, char *argv[]) {
     //     Call the functions and see if they return
     //
     try {
-        int result; 
-
-        //
-        // Set up the socket so the proxies can find it
-        //
         rpcproxyinitialize(argv[serverArg]);
 
-        // 
-        // Call (possibly remote) add
-        //
-        printf("Calling sqrt(saw)\n");
-        s saw = {
-            {0, 0},
-            {{0, 0, 0}, {3, 0, 0}},
-            {{{0, 1, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}}, {{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}}}
-        };
+        // printf("Calling area(r)\n");
+        // rectangle r = {3, 6};
+        // int result1 = area(r); // remote call (we hope!)
+        // printf("Returned from area(r). Result=%d\n",result1);
 
-        result = sqrt(saw); // remote call (we hope!)
-        printf("Returned from sqrt(saw). Result=%d\n",result);
+        printf("Calling findPerson(ps)\n");
+        ThreePeople ps = { {"Brian", "Yang", 20}, {"Manuel", "Pena", 20}, {"Johnny", "Tan", 21} };
+        Person result2 = findPerson(ps); // remote call (we hope!)
+        printf("Returned from area(r). Result=%s\n",result2.firstname.c_str());
     }
 
     //

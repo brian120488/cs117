@@ -15,58 +15,24 @@
 using namespace C150NETWORK;  // for all the comp150 utilities 
 using namespace std;
 
-string array_to_string(int arr[3]) {
-    stringstream ss;
-    ss << "[";
-    for (int i = 0; i < 3; i++) {
-        ss << arr[i];
-        ss << " ";
-    } 
-    ss << "]";
-    return ss.str();
-}
-
-string array2d_to_string(int x[3][2]) {
-    stringstream ss;
-    ss << "[";
-    for (int i = 0; i < 3; i++) {
-        ss << "[";
-        for (int j = 0; j < 2; j++) {
-            ss << x[i][j];
-            if (j < 1) ss << " ";  // Add comma between elements in the row
-        }
-        ss << "]";
-        if (i < 2) ss << " ";  // Add comma between rows
-    }
-    ss << "]";
-    return ss.str();
-}
-
-
 int sqrt(int x[3], int y[3][2], int z[3][2]) {
-    char readBuffer[5];  // to read magic value DONE + null
-    string message = "sqrt(" + array_to_string(x) + " " + array2d_to_string(y) + " " + array2d_to_string(z) + ")";
-    // string message = "sqrt(3, " + array_to_string(y) + ")";
+     char readBuffer[5];  // to read magic value DONE + null
 
-    //
-    // Send the Remote Call
-    //
-    //   c150debug->printf(C150RPCDEBUG,"arithmetic.proxy.cpp: " + message + " invoked");
-    RPCPROXYSOCKET->write(message.c_str(), message.length()+1); // write function name including null
+    string arg0 = "sqrt";
+    RPCPROXYSOCKET->write(arg0.c_str(), arg0.length() + 1); 
 
-    //
-    // Read the response
-    //
-    //   c150debug->printf(C150RPCDEBUG,"arithmetic.proxy.cpp: " + message + " invocation sent, waiting for response");
+    char* arg1 = reinterpret_cast<char*>(x);
+    RPCPROXYSOCKET->write(arg1, sizeof(int) * 3); 
+
+    char* arg2 = reinterpret_cast<char*>(y);
+    RPCPROXYSOCKET->write(arg2, sizeof(int) * 3 * 2); 
+
+    char* arg3 = reinterpret_cast<char*>(z);
+    RPCPROXYSOCKET->write(arg3, sizeof(int) * 3 * 2); 
+
+
     RPCPROXYSOCKET->read(readBuffer, sizeof(readBuffer)); // only legal response is DONE
     cout << readBuffer << endl;
-  //
-  // Check the response
-  //
-//   if (strncmp(readBuffer,"DONE", sizeof(readBuffer))!=0) {
-//     throw C150Exception("arithmetic.proxy: " + message + " received invalid response from the server");
-//   }
-//   c150debug->printf(C150RPCDEBUG,"arithmetic.proxy.cpp: " + message + " successful return from remote call");
 
     return stoi(readBuffer);
 }

@@ -51,7 +51,7 @@
 using namespace C150NETWORK;  // for all the comp150 utilities 
 
 void getFunctionNameFromStream(char *buffer, unsigned int bufSize);
-
+void getDataFromStream(char *buffer, unsigned int bufSize);
 // ======================================================================
 //                             STUBS
 //
@@ -114,214 +114,42 @@ void __sqrt(s swa) {
 // }
 
 
-
-// ======================================================================
-//
-//                        COMMON SUPPORT FUNCTIONS
-//
-// ======================================================================
-
-int* string_to_array(string s) {
-    // remove []
-    cout << "STRING: " << s << endl;
-    s.erase(0, 1);
-    s.pop_back();
-
-    int *arr = new int[2];
-    stringstream ss(s);
-    string num;
-    int index = 0;
-    while (getline(ss, num, ' ')) {
-        if (index >= 2) break;  // Ensure no overflow in the array
-        arr[index++] = stoi(num);
-    }
-    return arr;
-}
-
-
-int (*string_to_array2d(string s))[3] {
-    // remove []
-    cout << "STRING: " << s << endl;
-    s.erase(0, 1);
-    s.pop_back();
-
-    int (*arr)[3] = new int[2][3];
-
-    stringstream ss(s);
-    string num;
-    int row = 0, col = 0;
-
-    while (getline(ss, num, ' ')) {
-        // Remove any remaining brackets or spaces
-        num.erase(remove(num.begin(), num.end(), '['), num.end());
-        num.erase(remove(num.begin(), num.end(), ']'), num.end());
-        num.erase(remove(num.begin(), num.end(), ' '), num.end());
-        if (num == "") continue;
-        cout << "NUM: " << num << endl;
-        // Convert string to integer and assign to 2D array
-        arr[row][col] = stoi(num);
-
-        // Move to next column or row
-        col++;
-        if (col == 3) {  // Reset column and move to next row
-            col = 0;
-            row++;
-        }
-        if (row == 2) break;  // Stop if we have filled the 2x3 array
-    }
-    return arr;
-}
-
-int (*string_to_array3d(string s))[3][4] {
-    // Remove the outermost brackets
-    s.erase(0, 1);
-    s.pop_back();
-
-    int (*arr)[3][4] = new int[2][3][4];
-
-    stringstream ss(s);
-    string num;
-    int layer = 0, row = 0, col = 0;
-
-    while (getline(ss, num, ' ')) {
-        // Remove any remaining brackets or spaces
-        num.erase(remove(num.begin(), num.end(), '['), num.end());
-        num.erase(remove(num.begin(), num.end(), ']'), num.end());
-        num.erase(remove(num.begin(), num.end(), ' '), num.end());
-        if (num == "") continue;
-        
-        // Convert string to integer and assign to 3D array
-        arr[layer][row][col] = stoi(num);
-
-        // Move to next column, row, or layer as needed
-        col++;
-        if (col == 4) {   // Move to next row after filling columns
-            col = 0;
-            row++;
-        }
-        if (row == 3) {   // Move to next layer after filling rows
-            row = 0;
-            layer++;
-        }
-        if (layer == 2) break;  // Stop if we have filled the 2x3x4 array
-    }
-    return arr;
-}
-
-//
-//                         dispatchFunction()
-//
-//   Called when we're ready to read a new invocation request from the stream
-//
 void dispatchFunction() {
-
-    cout << "In dispatch\n";
     char buffer[50];
-    getFunctionNameFromStream(buffer,sizeof(buffer));
-    char *f_name = buffer;
-    cout <<  f_name << endl;
-    
+    getFunctionNameFromStream(buffer, sizeof(buffer));
+    string f_name(buffer);
 
-    char buffer1[50];
-    s saw;
-    for (int i = 0; i < 2; i++) {
-        getFunctionNameFromStream(buffer1,4);
-        saw.m1[i] = stoi(buffer1);
-        cout << saw.m1[i] << " ";
-    }
-    cout << endl;
-    
-    for (int i = 0; i < 2; i++) {
-        for (int j = 0; j < 3; j++) {
-            getFunctionNameFromStream(buffer1,4);
-            saw.m2[i][j] = stoi(buffer1);
-            cout << saw.m2[i][j] << " ";
-        }
-    }
-    cout << endl;
+    char buffer1[sizeof(s)];
+    getDataFromStream(buffer1, sizeof(buffer1));
+    s* saw = reinterpret_cast<s*>(buffer1);
 
-    for (int i = 0; i < 2; i++) {
-        for (int j = 0; j < 3; j++) {
-            for (int k = 0; k < 4; k++) {
-                getFunctionNameFromStream(buffer1,4);
-                saw.m3[i][j][k] = stoi(buffer1);
-                cout << saw.m3[i][j][k] << " ";
-            }
-        }
-    }
-    cout << endl;
     if (!RPCSTUBSOCKET-> eof()) {
-        if (strcmp(f_name, "sqrt") == 0){ 
-            __sqrt(saw);
+        if (f_name == "sqrt") { 
+            __sqrt(*saw);
         }
-        
         // else
         //   __badFunction(func.name.c_str());
     }
-
 }
 
- 
-//
-//                   getFunctionNamefromStream
-//
-//   Helper routine to read function name from the stream. 
-//   Note that this code is the same for all stubs, so can be generated
-//   as boilerplate.
-//
-//   Important: this routine must leave the sock open but at EOF
-//   when eof is read from client.
-//
-
-void getFunctionNameFromStream(char *buffer, unsigned int bufSize) {
-    unsigned int i;
-    char *bufp;    // next char to read
-    bool readnull;
-    ssize_t readlen;             // amount of data read from socket
-    
-    //
-    // Read a message from the stream
-    // -1 in size below is to leave room for null
-    //
-    readnull = false;
-    bufp = buffer;
-    for (i=0; i< bufSize; i++) {
-        readlen = RPCSTUBSOCKET-> read(bufp, 1);  // read a byte
-        // check for eof or error f
+void getFunctionNameFromStream(char *buffer, unsigned bufSize) {
+    char *bufp = buffer;     
+    ssize_t readlen;  
+    for (unsigned i = 0; i < bufSize; i++) {
+        readlen = RPCSTUBSOCKET->read(bufp, 1);
         if (readlen == 0) break;
-
-        // check for null and bump buffer pointer
-        if (*bufp++ == '\0') {
-            readnull = true;
-            break;
-        }
+        if (*bufp++ == '\0') break;
     }
+}
 
-    //
-  // With TCP streams, we should never get a 0 length read
-  // except with timeouts (which we're not setting in pingstreamserver)
-  // or EOF
-  //
-    if (readlen == 0) {
-        c150debug->printf(C150RPCDEBUG,"simplefunction.stub: read zero length message, checking EOF");
-        if (RPCSTUBSOCKET-> eof()) {
-        c150debug->printf(C150RPCDEBUG,"simplefunction.stub: EOF signaled on input");
-
-        } else {
-        throw C150Exception("simplefunction.stub: unexpected zero length read without eof");
-        }
+void getDataFromStream(char *buffer, unsigned int bufSize) {
+    char *bufp = buffer;        
+    ssize_t readlen;
+    for (unsigned i = 0; i < bufSize; i++) {
+        readlen = RPCSTUBSOCKET->read(bufp, 1);
+        if (readlen == 0) break;
+        bufp++;
     }
-
-  //
-  // If we didn't get a null, input message was poorly formatted
-  //
-    else if (!readnull) 
-        throw C150Exception("simplefunction.stub: method name not null terminated or too long");
-
-  
-  //
-  // Note that eof may be set here for our caller to check
-  //
 }
 
 
