@@ -19,7 +19,8 @@
 
 #include "floatarithmetic.idl"
 
-
+#include <iostream>
+using namespace std;
 
 float add(float x, float y) {
   return x+y;

@@ -39,7 +39,7 @@ def generate_stub(idl_name, decls):
     for name, info in decls["functions"].items():
         stub_code.append(stub_function_header_string(name, info))
         stub_code.append(get_output_string(name, info))
-        stub_code.append(send_output_string())
+        stub_code.append(send_output_string(info))
         stub_code.append("}\n")
 
     stub_code.append(dispatch_function_string())

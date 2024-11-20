@@ -27,7 +27,7 @@ def send_arg_string(i, arg):
 def read_output_string(info):
     ret_type = info["return_type"]
     return f"""    char readBuffer[sizeof({ret_type})];
-    RPCPROXYSOCKET->read(readBuffer, sizeof(readBuffer));
+    RPCPROXYSOCKET->read(readBuffer, sizeof({ret_type}));
     return *reinterpret_cast<{ret_type}*>(readBuffer);"""
     
     
@@ -56,9 +56,11 @@ def get_output_string(name, info):
     args = ", ".join([arg["name"] for arg in info["arguments"]])
     return f"    {ret_type} output = {name}({args});"
 
-def send_output_string():
-    return """    char *outputBuffer = reinterpret_cast<char*>(&output);
-    RPCSTUBSOCKET->write(outputBuffer, sizeof(outputBuffer));"""
+def send_output_string(info):
+    ret_type = info["return_type"]
+    return f"""    char *outputBuffer = reinterpret_cast<char*>(&output);
+    RPCSTUBSOCKET->write(outputBuffer, sizeof({ret_type}));"""
+
 
 #// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 #//                          DISPATCH FUNCTIONS

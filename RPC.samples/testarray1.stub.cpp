@@ -135,11 +135,12 @@ void dispatchFunction() {
     string f_name(buffer);
 
     char buffer1[4*24];
-    getDataFromStream(buffer1, sizeof(buffer1));
+    // getDataFromStream(buffer1, sizeof(buffer1));
+    RPCSTUBSOCKET->read(buffer1, sizeof(buffer1));
     int *x = reinterpret_cast<int*>(buffer1);
 
     char buffer2[4*24];
-    getDataFromStream(buffer2, sizeof(buffer2));
+    // getDataFromStream(buffer2, sizeof(buffer2));
     int *y = reinterpret_cast<int*>(buffer2);
 
     if (!RPCSTUBSOCKET-> eof()) {
@@ -167,7 +168,7 @@ void dispatchFunction() {
 
 void getFunctionNameFromStream(char *buffer, unsigned bufSize) {
     char *bufp = buffer;     
-    ssize_t readlen;  
+    ssize_t readlen; 
     for (unsigned i = 0; i < bufSize; i++) {
         readlen = RPCSTUBSOCKET->read(bufp, 1);
         if (readlen == 0) break;

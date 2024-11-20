@@ -17,7 +17,7 @@ int add(int x, int y) {
     RPCPROXYSOCKET->write(arg1, sizeof(int));
 
     char readBuffer[sizeof(int)];
-    RPCPROXYSOCKET->read(readBuffer, sizeof(int));
+    RPCPROXYSOCKET->read(readBuffer, sizeof(readBuffer));
     return *reinterpret_cast<int*>(readBuffer);
 }
 
@@ -32,7 +32,7 @@ int divide(int x, int y) {
     RPCPROXYSOCKET->write(arg1, sizeof(int));
 
     char readBuffer[sizeof(int)];
-    RPCPROXYSOCKET->read(readBuffer, sizeof(int));
+    RPCPROXYSOCKET->read(readBuffer, sizeof(readBuffer));
     return *reinterpret_cast<int*>(readBuffer);
 }
 
@@ -47,7 +47,7 @@ int multiply(int x, int y) {
     RPCPROXYSOCKET->write(arg1, sizeof(int));
 
     char readBuffer[sizeof(int)];
-    RPCPROXYSOCKET->read(readBuffer, sizeof(int));
+    RPCPROXYSOCKET->read(readBuffer, sizeof(readBuffer));
     return *reinterpret_cast<int*>(readBuffer);
 }
 
@@ -62,6 +62,6 @@ int subtract(int x, int y) {
     RPCPROXYSOCKET->write(arg1, sizeof(int));
 
     char readBuffer[sizeof(int)];
-    RPCPROXYSOCKET->read(readBuffer, sizeof(int));
+    RPCPROXYSOCKET->read(readBuffer, sizeof(readBuffer));
     return *reinterpret_cast<int*>(readBuffer);
 }

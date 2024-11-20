@@ -44,7 +44,7 @@ CPPFLAGS = -g -Wall -Werror -I$(C150IDSRPC) -I$(C150LIB)
 LDFLAGS = 
 INCLUDES = $(C150LIB)c150streamsocket.h $(C150LIB)c150network.h $(C150LIB)c150exceptions.h $(C150LIB)c150debug.h $(C150LIB)c150utility.h $(C150LIB)c150grading.h $(C150IDSRPC)IDLToken.h $(C150IDSRPC)tokenizeddeclarations.h  $(C150IDSRPC)tokenizeddeclaration.h $(C150IDSRPC)declarations.h $(C150IDSRPC)declaration.h $(C150IDSRPC)functiondeclaration.h $(C150IDSRPC)typedeclaration.h $(C150IDSRPC)arg_or_member_declaration.h rpcproxyhelper.h rpcstubhelper.h simplefunction.idl arithmetic.idl floatarithmetic.idl
 
-all: pingstreamclient pingstreamserver idldeclarationtst simplefunctionclient simplefunctionserver idl_to_json arithmeticclient arithmeticserver testarray1client testarray1server testarray2client testarray2server structwitharrayclient structwitharrayserver structsclient structsserver
+all: pingstreamclient pingstreamserver idldeclarationtst simplefunctionclient simplefunctionserver idl_to_json arithmeticclient arithmeticserver floatarithmeticclient floatarithmeticserver testarray1client testarray1server testarray2client testarray2server structwitharrayclient structwitharrayserver structsclient structsserver
 
 ########################################################################
 #
@@ -98,13 +98,17 @@ arithmeticclient: arithmeticclient.o rpcproxyhelper.o arithmetic.proxy.o  $(C150
 arithmeticserver: arithmetic.stub.o rpcserver.o rpcstubhelper.o arithmetic.o  $(C150AR) $(C150IDSRPCAR)  $(INCLUDES)
 	$(CPP) -o arithmeticserver rpcserver.o arithmetic.stub.o arithmetic.o rpcstubhelper.o $(C150AR) $(C150IDSRPCAR) 
 
+floatarithmeticclient: floatarithmeticclient.o rpcproxyhelper.o floatarithmetic.proxy.o  $(C150AR) $(C150IDSRPCAR)  $(INCLUDES)
+	$(CPP) -o floatarithmeticclient floatarithmeticclient.o rpcproxyhelper.o floatarithmetic.proxy.o  $(C150AR) $(C150IDSRPCAR) 
+
+floatarithmeticserver: floatarithmetic.stub.o rpcserver.o rpcstubhelper.o floatarithmetic.o  $(C150AR) $(C150IDSRPCAR)  $(INCLUDES)
+	$(CPP) -o floatarithmeticserver rpcserver.o floatarithmetic.stub.o floatarithmetic.o rpcstubhelper.o $(C150AR) $(C150IDSRPCAR) 
 
 testarray1client: testarray1client.o rpcproxyhelper.o testarray1.proxy.o  $(C150AR) $(C150IDSRPCAR)  $(INCLUDES)
 	$(CPP) -o testarray1client testarray1client.o rpcproxyhelper.o testarray1.proxy.o  $(C150AR) $(C150IDSRPCAR) 
 
 testarray1server: testarray1.stub.o rpcserver.o rpcstubhelper.o testarray1.o  $(C150AR) $(C150IDSRPCAR)  $(INCLUDES)
 	$(CPP) -o testarray1server rpcserver.o testarray1.stub.o testarray1.o rpcstubhelper.o $(C150AR) $(C150IDSRPCAR) 
-
 
 testarray2client: testarray2client.o rpcproxyhelper.o testarray2.proxy.o  $(C150AR) $(C150IDSRPCAR)  $(INCLUDES)
 	$(CPP) -o testarray2client testarray2client.o rpcproxyhelper.o testarray2.proxy.o  $(C150AR) $(C150IDSRPCAR) 
