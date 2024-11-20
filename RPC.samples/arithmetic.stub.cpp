@@ -49,227 +49,61 @@
 
 using namespace C150NETWORK;  // for all the comp150 utilities 
 
-void getFunctionNameFromStream(char *buffer, unsigned int bufSize);
-
-// ======================================================================
-//                             STUBS
-//
-//    Each of these is generated to match the signature of the 
-//    function for which it is a stub. The names are prefixed with "__"
-//    to keep them distinct from the actual routines, which we call!
-//
-//    Note that when functions take arguments, these are the routines
-//    that will read them from the input stream. These routines should
-//    be generated dynamically from your rpcgen program (and so should the
-//    code above).
-//
-// ======================================================================
-  
+void getFunctionNameFromStream(char *buffer, unsigned bufSize) {
+    char *bufp = buffer;     
+    ssize_t readlen;  
+    for (unsigned i = 0; i < bufSize; i++) {
+        cout << "hi1\n";
+        readlen = RPCSTUBSOCKET->read(bufp, 1);
+        cout << "hi2\n";
+        if (readlen == 0) break;
+        if (*bufp++ == '\0') break;
+    }
+}
 
 
 void __add(int x, int y) {
-
-  //
-  // Time to actually call the function 
-  //
-  c150debug->printf(C150RPCDEBUG,"simplefunction.stub.cpp: invoking func1()");
-  cout << "Adding...\n";
-  int output = add(x, y);
-
-  //
-  // Send the response to the client
-  //
-  // If func1 returned something other than void, this is
-  // where we'd send the return value back.
-  //
-  // c150debug->printf(C150RPCDEBUG,"simplefunction.stub.cpp: returned from  func1() -- responding to client");
-  // RPCSTUBSOCKET->write(doneBuffer, strlen(doneBuffer)+1);
-
-  char outputBuffer[50]; // Buffer to hold the output string
-  snprintf(outputBuffer, sizeof(outputBuffer), "%d", output); // Convert output to string
-
-  c150debug->printf(C150RPCDEBUG,"simplefunction.stub.cpp: returned from  func3() -- responding to client");
-  RPCSTUBSOCKET->write(outputBuffer, strlen(outputBuffer)+1);
+    int output = add(x, y);
+    char *outputBuffer = reinterpret_cast<char*>(&output);
+    RPCSTUBSOCKET->write(outputBuffer, sizeof(outputBuffer));
 }
 
 void __subtract(int x, int y) {
-  c150debug->printf(C150RPCDEBUG,"simplefunction.stub.cpp: invoking func2()");
-  int output = subtract(x, y);
-
-  char outputBuffer[50]; // Buffer to hold the output string
-  snprintf(outputBuffer, sizeof(outputBuffer), "%d", output); // Convert output to string
-
-  c150debug->printf(C150RPCDEBUG,"simplefunction.stub.cpp: returned from  func3() -- responding to client");
-  RPCSTUBSOCKET->write(outputBuffer, strlen(outputBuffer)+1);
+    int output = subtract(x, y);
+    char *outputBuffer = reinterpret_cast<char*>(&output);
+    RPCSTUBSOCKET->write(outputBuffer, sizeof(outputBuffer));
 }
 
 void __multiply(int x, int y) {
-  c150debug->printf(C150RPCDEBUG,"simplefunction.stub.cpp: invoking func3()");
-  int output = multiply(x, y);
-
-  char outputBuffer[50]; // Buffer to hold the output string
-  snprintf(outputBuffer, sizeof(outputBuffer), "%d", output); // Convert output to string
-
-  c150debug->printf(C150RPCDEBUG,"simplefunction.stub.cpp: returned from  func3() -- responding to client");
-  RPCSTUBSOCKET->write(outputBuffer, strlen(outputBuffer)+1);
+    int output = multiply(x, y);
+    char *outputBuffer = reinterpret_cast<char*>(&output);
+    RPCSTUBSOCKET->write(outputBuffer, sizeof(outputBuffer));
 }
 
 void __divide(int x, int y) {
-
-  c150debug->printf(C150RPCDEBUG,"simplefunction.stub.cpp: invoking divide()");
-  int output = divide(x, y);
-  char outputBuffer[50]; // Buffer to hold the output string
-  snprintf(outputBuffer, sizeof(outputBuffer), "%d", output); // Convert output to string
-
-  c150debug->printf(C150RPCDEBUG,"simplefunction.stub.cpp: returned from  func3() -- responding to client");
-  RPCSTUBSOCKET->write(outputBuffer, strlen(outputBuffer)+1);
+    int output = divide(x, y);
+    char *outputBuffer = reinterpret_cast<char*>(&output);
+    RPCSTUBSOCKET->write(outputBuffer, sizeof(outputBuffer));
 }
 
-
-//
-//     __badFunction
-//
-//   Pseudo-stub for missing functions.
-//
-
-// void __badFunction(char *functionName) {
-//   char doneBuffer[5] = "BAD";  // to write magic value DONE + null
-
-
-//   //
-//   // Send the response to the client indicating bad function
-//   //
-
-//   c150debug->printf(C150RPCDEBUG,"simplefunction.stub.cpp: received call for nonexistent function %s()",functionName);
-//   RPCSTUBSOCKET->write(doneBuffer, strlen(doneBuffer)+1);
-// }
-
-
-
-// ======================================================================
-//
-//                        COMMON SUPPORT FUNCTIONS
-//
-// ======================================================================
-
-
-
-//
-//                         dispatchFunction()
-//
-//   Called when we're ready to read a new invocation request from the stream
-//
 void dispatchFunction() {
-
-    cout << "In dispatch\n";
+    cout << "in dispatch\n";
     char buffer[50];
-
-    //
-    // Read the function name from the stream -- note
-    // REPLACE THIS WITH YOUR OWN LOGIC DEPENDING ON THE 
-    // WIRE FORMAT YOU USE
-    //
-    cout <<"Hi\n";
     getFunctionNameFromStream(buffer,sizeof(buffer));
-    char *f_name = buffer;
-    cout <<  f_name << endl;
-    
-    char buffer1[50];
-    getFunctionNameFromStream(buffer1,4);
+    string f_name(buffer);
 
-    cout << buffer1 << endl;
-    // std::ostringstream oss;
-    // oss << reinterpret_cast<int*>(buffer1); // Convert the pointer to a string (its address)
-    // int x = strtol(oss.str().c_str(), nullptr, 16);
-    int x = strtol(buffer1, nullptr, 16);
-    cout << "AR: " << x << endl;
-
-    getFunctionNameFromStream(buffer1,4);
-    int y = *reinterpret_cast<int*>(buffer1);
-    cout << y << endl;
-
-    //
-    // We've read the function name, call the stub for the right one
-    // The stub will invoke the function and send response.
-    //
-
-    cout << f_name << " " << x << " " << y << endl;
     if (!RPCSTUBSOCKET-> eof()) {
-        if (strcmp(f_name,"add") != 0)
+        if (f_name == "add") {
+            cout << ""
+            char buffer1[sizeof(int)];
+            RPCSTUBSOCKET->read(buffer1, sizeof(int));
+            int x = *reinterpret_cast<int*>(buffer1);
+
+            char buffer2[sizeof(int)];
+            RPCSTUBSOCKET->read(buffer2, sizeof(int));
+            int y = *reinterpret_cast<int*>(buffer2);
+
             __add(x, y);
-        // else   if (f.name == "subtract")
-        // __subtract(x, y);
-        // else   if (f.name == "multiply")
-        // __multiply(x, y);
-        // else   if (f.name == "divide")
-        // __divide(x, y);
-        // else
-        //   __badFunction(func.name.c_str());
-    }
-}
-
- 
-//
-//                   getFunctionNamefromStream
-//
-//   Helper routine to read function name from the stream. 
-//   Note that this code is the same for all stubs, so can be generated
-//   as boilerplate.
-//
-//   Important: this routine must leave the sock open but at EOF
-//   when eof is read from client.
-//
-
-void getFunctionNameFromStream(char *buffer, unsigned int bufSize) {
-    unsigned int i;
-    char *bufp;    // next char to read
-    bool readnull;
-    ssize_t readlen;             // amount of data read from socket
-    
-    //
-    // Read a message from the stream
-    // -1 in size below is to leave room for null
-    //
-    readnull = false;
-    bufp = buffer;
-    for (i=0; i< bufSize; i++) {
-        readlen = RPCSTUBSOCKET-> read(bufp, 1);  // read a byte
-        // check for eof or error f
-        if (readlen == 0) break;
-
-        // check for null and bump buffer pointer
-        if (*bufp++ == '\0') {
-            readnull = true;
-            cout << "I: " << i << endl;
-            break;
         }
     }
-        
-  //
-  // With TCP streams, we should never get a 0 length read
-  // except with timeouts (which we're not setting in pingstreamserver)
-  // or EOF
-  //
-  if (readlen == 0) {
-    c150debug->printf(C150RPCDEBUG,"simplefunction.stub: read zero length message, checking EOF");
-    if (RPCSTUBSOCKET-> eof()) {
-      c150debug->printf(C150RPCDEBUG,"simplefunction.stub: EOF signaled on input");
-
-    } else {
-      throw C150Exception("simplefunction.stub: unexpected zero length read without eof");
-    }
-  }
-
-  //
-  // If we didn't get a null, input message was poorly formatted
-  //
-  else if (!readnull) 
-    throw C150Exception("simplefunction.stub: method name not null terminated or too long");
-
-  
-  //
-  // Note that eof may be set here for our caller to check
-  //
 }
-
-

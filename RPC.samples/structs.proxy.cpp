@@ -1,21 +1,8 @@
-
-// IMPORTANT! WE INCLUDE THE IDL FILE AS IT DEFINES THE INTERFACES
-// TO THE FUNCTIONS WE'RE IMPLEMENTING. THIS MAKES SURE THE
-// CODE HERE ACTUALLY MATCHES THE REMOTED INTERFACE
-
 #include "structs.idl"
-
 #include "rpcproxyhelper.h"
 
-#include <cstdio>
-#include <cstring>
-#include <sstream>
-#include "c150debug.h"
-
-using namespace C150NETWORK;  // for all the comp150 utilities 
 using namespace std;
-void getDataFromStream(char *buffer, unsigned int bufSize);
-
+using namespace C150NETWORK;
 
 Person findPerson(ThreePeople ps) {
     string arg0 = "findPerson";
@@ -25,7 +12,7 @@ Person findPerson(ThreePeople ps) {
     RPCPROXYSOCKET->write(arg1, sizeof(ThreePeople)); 
 
     char readBuffer[sizeof(Person)];
-    getDataFromStream(readBuffer, sizeof(readBuffer));
+    RPCPROXYSOCKET->read(readBuffer, sizeof(readBuffer));
     return *reinterpret_cast<Person*>(readBuffer);
 }
 

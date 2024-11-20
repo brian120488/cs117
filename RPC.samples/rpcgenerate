@@ -1,40 +1,79 @@
 #!/bin/env python3
 
-import subprocess
-import json
-import sys
-import os
+from parse_idl import *
+from strings import *
 
-IDL_TO_JSON_EXECUTABLE = './idl_to_json'
+# Function to generate proxy file content
+def generate_proxy(idl_name, decls):
+    proxy_code = [f"// Proxy file generated for {idl_name}\n"]
+    proxy_code.append(f"#include \"{idl_name}.idl\"")
+    proxy_code.append("#include \"rpcproxyhelper.h\"\n")
+    proxy_code.append("using namespace std;")
+    proxy_code.append("using namespace C150NETWORK;\n")
+
+    for name, info in decls["functions"].items():
+        proxy_code.append(proxy_function_header_string(name, info))
+        proxy_code.append(send_function_string(name))
+        
+        # send arguments
+        for i, arg in enumerate(info["arguments"]):
+            proxy_code.append(send_arg_string(i, arg))
+        
+        # read output
+        proxy_code.append(read_output_string(info))
+        
+        proxy_code.append("}\n")
+
+    return "\n".join(proxy_code)
+
+# Function to generate stub file content
+def generate_stub(idl_name, decls):
+    stub_code = [f"// Stub file generated for {idl_name}\n"]
+    stub_code.append(f"#include \"{idl_name}.idl\"")
+    stub_code.append('#include \"rpcstubhelper.h\"\n')
+    stub_code.append("using namespace std;")
+    stub_code.append("using namespace C150NETWORK;\n")
+
+    stub_code.append(get_function_name_string())    
+
+    for name, info in decls["functions"].items():
+        stub_code.append(stub_function_header_string(name, info))
+        stub_code.append(get_output_string(name, info))
+        stub_code.append(send_output_string())
+        stub_code.append("}\n")
+
+    stub_code.append(dispatch_function_string())
+    for name, info in decls["functions"].items():
+        stub_code.append(dispatch_if_string(name, info))
+    stub_code.append("    }\n}");
+    return "\n".join(stub_code)
+
+# Main function for the rpcgenerate script
+def rpcgenerate(file_path):
+    idl_name = os.path.splitext(os.path.basename(file_path))[0]
+    decls = parse_idl(file_path)
+
+    # Generate proxy and stub content
+    proxy_content = generate_proxy(idl_name, decls)
+    stub_content = generate_stub(idl_name, decls)
+
+    # Write proxy file
+    proxy_file = f"{idl_name}.proxy.cpp"
+    with open(proxy_file, 'w') as file:
+        file.write(proxy_content)
+    print(f"Generated {proxy_file}")
+    
+    # Write stub file
+    stub_file = f"{idl_name}.stub.cpp"
+    with open(stub_file, 'w') as file:
+        file.write(stub_content)
+    print(f"Generated {stub_file}")
 
 
-try:
-    #     Make sure invoked properly
-    assert len(sys.argv) == 2, "Wrong number of arguments"
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print("Usage: ./rpcgenerate <idl_file>")
+        sys.exit(1)
 
-    #     Make sure IDL file exists and is readable
-    filename = sys.argv[1]
-    assert os.path.isfile(filename), f"Path {filename} does not designate a file"
-    assert os.access(filename, os.R_OK), f"File {filename} is not readable" 
-
-    #     Make sure idl_to_json exists and is executable
-    assert os.path.isfile(IDL_TO_JSON_EXECUTABLE), f"Path {IDL_TO_JSON_EXECUTABLE} does not designate a file...run \"make\" to create it" 
-    assert os.access(IDL_TO_JSON_EXECUTABLE, os.X_OK), f"File {IDL_TO_JSON_EXECUTABLE} exists but is not executable"
-
-    #     Parse declarations into a Python dictionary
-    decls = json.loads(subprocess.check_output([IDL_TO_JSON_EXECUTABLE, filename]))
-
-    # Loop printing each function signature
-    for  name, sig in decls["functions"].items():
-        # Python List of all args (each is a dictionary with keys "name" and "type")
-        args = sig["arguments"]
-
-        # Make a string of form:  "type1 arg1, type2 arg2" for use in function sig
-        argstring = ', '.join([a["type"] + ' ' + a["name"] for a in args])
-
-        # print the function signature
-        print(f"{sig['return_type']} {name}({argstring})")
-
-except Exception as e:
-    print(str(e), file=sys.stderr)
-    print(f"Usage: {sys.argv[0]} <idlfilename>", file=sys.stderr)
+    idl_file = sys.argv[1]
+    rpcgenerate(idl_file)

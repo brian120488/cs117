@@ -40,13 +40,9 @@
 // CODE HERE ACTUALLY MATCHES THE REMOTED INTERFACE
 
 #include "structs.idl"
-
 #include "rpcstubhelper.h"
 
-#include <cstdio>
-#include <cstring>
-#include "c150debug.h"
-
+using namespace std;
 using namespace C150NETWORK;  // for all the comp150 utilities 
 
 void getFunctionNameFromStream(char *buffer, unsigned bufSize);

@@ -27,8 +27,7 @@ int sqrt(int x[24], int y[24]) {
     char* arg2 = reinterpret_cast<char*>(y);
     RPCPROXYSOCKET->write(arg2, sizeof(int) * 24); 
 
-
-    RPCPROXYSOCKET->read(readBuffer, sizeof(readBuffer)); // only legal response is DONE
+    RPCPROXYSOCKET->read(readBuffer, sizeof(readBuffer));
     cout << readBuffer << endl;
 
     return stoi(readBuffer);
