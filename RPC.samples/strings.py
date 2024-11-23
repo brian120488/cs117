@@ -95,6 +95,3 @@ def dispatch_if_string(name, info):
     if_string += f"\t    __{name} ({args});"
     if_string += "\n\t}\n"
     return if_string
-
-
-# TODO: void functions, arrays, and structs, and nested structures
