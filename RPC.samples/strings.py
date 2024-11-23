@@ -54,6 +54,7 @@ def send_arg_string(i, arg, decls):
     
 def read_output_string(info):
     ret_type = info["return_type"]
+    if ret_type == "void": return ""
     return f"""    char readBuffer[sizeof({ret_type})];
     RPCPROXYSOCKET->read(readBuffer, sizeof({ret_type}));
     return *reinterpret_cast<{ret_type}*>(readBuffer);"""
@@ -95,10 +96,12 @@ def stub_function_header_string(name, info, decls):
 def get_output_string(name, info):
     ret_type = info["return_type"]
     args = ", ".join([arg["name"] for arg in info["arguments"]])
+    if ret_type == "void": return f"    {name}({args});";
     return f"    {ret_type} output = {name}({args});"
 
 def send_output_string(info):
     ret_type = info["return_type"]
+    if ret_type == "void": return ""
     return f"""    char *outputBuffer = reinterpret_cast<char*>(&output);
     RPCSTUBSOCKET->write(outputBuffer, sizeof({ret_type}));"""
 
@@ -142,4 +145,4 @@ def dispatch_if_string(name, info, decls):
     return if_string
 
 
-# TODO: void, arrays, n-d arrays, structs, and nested structures
+# TODO: n-d arrays, structs, and nested structures
