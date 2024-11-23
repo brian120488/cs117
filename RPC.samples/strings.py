@@ -21,7 +21,7 @@ def proxy_function_header_string(name, info, decls):
         elif type_of_type == "array":
             member_type = types[arg_type]["member_type"]
             element_count = types[arg_type]["element_count"]
-            header_args.append(f"{member_type}[{element_count}] {arg_name}")
+            header_args.append(f"{member_type} {arg_name}[{element_count}]")
     header += ", ".join(header_args) + ") {"
     return header
 
