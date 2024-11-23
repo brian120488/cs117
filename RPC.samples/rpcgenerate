@@ -17,7 +17,7 @@ def generate_proxy(idl_name, decls):
         
         # send arguments
         for i, arg in enumerate(info["arguments"]):
-            proxy_code.append(send_arg_string(i, arg))
+            proxy_code.append(send_arg_string(i, arg, decls))
         
         # read output
         proxy_code.append(read_output_string(info))
@@ -37,7 +37,7 @@ def generate_stub(idl_name, decls):
     stub_code.append(get_function_name_string())    
 
     for name, info in decls["functions"].items():
-        stub_code.append(stub_function_header_string(name, info))
+        stub_code.append(stub_function_header_string(name, info, decls))
         stub_code.append(get_output_string(name, info))
         stub_code.append(send_output_string(info))
         stub_code.append("}\n")
@@ -58,13 +58,13 @@ def rpcgenerate(file_path):
     stub_content = generate_stub(idl_name, decls)
 
     # Write proxy file
-    proxy_file = f"{idl_name}.proxy.cpp"
+    proxy_file = f"{idl_name}.proxy.test"
     with open(proxy_file, 'w') as file:
         file.write(proxy_content)
     print(f"Generated {proxy_file}")
     
     # Write stub file
-    stub_file = f"{idl_name}.stub.cpp"
+    stub_file = f"{idl_name}.stub.test"
     with open(stub_file, 'w') as file:
         file.write(stub_content)
     print(f"Generated {stub_file}")

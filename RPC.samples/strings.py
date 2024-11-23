@@ -25,11 +25,21 @@ def proxy_function_header_string(name, info, decls):
     header += ", ".join(header_args) + ") {"
     return header
 
-def send_arg_string(i, arg):
+def send_arg_string(i, arg, decls):
     arg_name = arg["name"]
     arg_type = arg["type"]
-    return f"""    char* arg{i} = reinterpret_cast<char*>(&{arg_name});
-    RPCPROXYSOCKET->write(arg{i}, sizeof({arg_type}));\n"""
+    type_of_type = decls["types"][arg_type]["type_of_type"]
+    ampersand = "&" if type_of_type != "array" else ""
+    cast_line = f"char* arg{i} = reinterpret_cast<char*>({ampersand}{arg_name});"
+    
+    if type_of_type == "builtin":
+        sizeof_arg = f"sizeof({arg_type})"
+    elif type_of_type == "array":
+        member_type = decls["types"][arg_type]["member_type"]
+        element_count = decls["types"][arg_type]["element_count"]
+        sizeof_arg = f"sizeof({member_type}) * {element_count}"
+    write_line = f"RPCPROXYSOCKET->write(arg{i}, {sizeof_arg});"
+    return f"""    {cast_line}\n    {write_line}\n"""
     
 def read_output_string(info):
     ret_type = info["return_type"]
@@ -54,9 +64,22 @@ def get_function_name_string():
     }
 }\n"""
 
-def stub_function_header_string(name, info):
-    args = ", ".join([arg["type"] + " " + arg["name"] for arg in info["arguments"]])
-    return f"void __{name}({args})" + " {"
+def stub_function_header_string(name, info, decls):
+    header_args = []
+    for arg in info["arguments"]:
+        arg_name = arg["name"]
+        arg_type = arg["type"]
+        types = decls["types"]
+        type_of_type = types[arg_type]["type_of_type"]
+        if type_of_type == "builtin":
+            header_args.append(f"{arg_type} {arg_name}")
+        elif type_of_type == "array":
+            member_type = types[arg_type]["member_type"]
+            element_count = types[arg_type]["element_count"]
+            header_args.append(f"{member_type} {arg_name}[{element_count}]")
+        
+    header_args = ", ".join(header_args)
+    return f"void __{name}({header_args})" + " {"
 
 def get_output_string(name, info):
     ret_type = info["return_type"]
