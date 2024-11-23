@@ -7,14 +7,21 @@ def send_function_string(name):
     return f"""    string name = "{name}";
     RPCPROXYSOCKET->write(name.c_str(), name.length() + 1);\n"""
     
-def proxy_function_header_string(name, info):
+def proxy_function_header_string(name, info, decls):
     ret_type = info["return_type"]
     header = f"{ret_type} {name}("
     header_args = []
     for arg in info["arguments"]:
         arg_name = arg["name"]
         arg_type = arg["type"]
-        header_args.append(f"{arg_type} {arg_name}")
+        types = decls["types"]
+        type_of_type = types[arg_type]["type_of_type"]
+        if type_of_type == "builtin":
+            header_args.append(f"{arg_type} {arg_name}")
+        elif type_of_type == "array":
+            member_type = types[arg_type]["member_type"]
+            element_count = types[arg_type]["element_count"]
+            header_args.append(f"{member_type}[{element_count}] {arg_name}")
     header += ", ".join(header_args) + ") {"
     return header
 
@@ -88,3 +95,6 @@ def dispatch_if_string(name, info):
     if_string += f"\t    __{name} ({args});"
     if_string += "\n\t}\n"
     return if_string
+
+
+# TODO: void functions, arrays, and structs, and nested structures
