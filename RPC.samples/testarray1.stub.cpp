@@ -74,7 +74,8 @@ void dispatchFunction() {
         if (f_name == "sqrt") { 
             char buffer1[sizeof(int) * 24];
             RPCSTUBSOCKET->read(buffer1, sizeof(int) * 24);
-            int *x = reinterpret_cast<int*>(buffer1);
+            // int (*x)[24] = reinterpret_cast<int(*)[24]>(buffer1);
+            int *x = reinterpret_cast<int(*)>(buffer1);
 
             char buffer2[sizeof(int) * 24];
             RPCSTUBSOCKET->read(buffer2, sizeof(int) * 24);
@@ -83,7 +84,6 @@ void dispatchFunction() {
             __sqrt(x, y);
         }
     }
-
 }
 
 

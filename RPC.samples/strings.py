@@ -1,5 +1,21 @@
 #// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 #//
+#//                           SUPPORT FUNCTIONS
+#//
+#// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+def sizeof(arg_type, decls):
+    type_of_type = decls["types"][arg_type]["type_of_type"]
+    
+    if type_of_type == "builtin":
+        return f"sizeof({arg_type})"
+    elif type_of_type == "array":
+        member_type = decls["types"][arg_type]["member_type"]
+        element_count = decls["types"][arg_type]["element_count"]
+        return f"sizeof({member_type}) * {element_count}"
+    
+    
+#// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+#//
 #//                           PROXY FUNCTIONS
 #//
 #// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -32,12 +48,7 @@ def send_arg_string(i, arg, decls):
     ampersand = "&" if type_of_type != "array" else ""
     cast_line = f"char* arg{i} = reinterpret_cast<char*>({ampersand}{arg_name});"
     
-    if type_of_type == "builtin":
-        sizeof_arg = f"sizeof({arg_type})"
-    elif type_of_type == "array":
-        member_type = decls["types"][arg_type]["member_type"]
-        element_count = decls["types"][arg_type]["element_count"]
-        sizeof_arg = f"sizeof({member_type}) * {element_count}"
+    sizeof_arg = sizeof(arg_type, decls)
     write_line = f"RPCPROXYSOCKET->write(arg{i}, {sizeof_arg});"
     return f"""    {cast_line}\n    {write_line}\n"""
     
@@ -103,18 +114,32 @@ def dispatch_function_string():
 
     if (!RPCSTUBSOCKET-> eof()) {"""
     
-def read_argument_string(i, arg):
+def read_argument_string(i, arg, decls):
     arg_name = arg["name"]
     arg_type = arg["type"]
-    return f"""\t    char buffer{i}[sizeof({arg_type})];
-    \t    RPCSTUBSOCKET->read(buffer{i}, sizeof({arg_type}));
-    \t    {arg_type} {arg_name} = *reinterpret_cast<{arg_type}*>(buffer{i});\n"""
+    types = decls["types"]
+    type_of_type = types[arg_type]["type_of_type"]
+    sizeof_arg = sizeof(arg_type, decls)
+    
+    declare_line = f"char buffer{i}[{sizeof_arg}];"
+    read_line = f"RPCSTUBSOCKET->read(buffer{i}, {sizeof_arg});"
+    
+    if type_of_type == "builtin":
+        cast_line = f"{arg_type} {arg_name} = *reinterpret_cast<{arg_type}*>(buffer{i});"
+    elif type_of_type == "array":
+        member_type = types[arg_type]["member_type"]
+        element_count = types[arg_type]["element_count"]
+        cast_line = f"{member_type} *{arg_name} = reinterpret_cast<{member_type}(*)>(buffer{i});"
+    return f"\t    {declare_line}\n\t    {read_line}\n\t    {cast_line}\n"
 
-def dispatch_if_string(name, info):
+def dispatch_if_string(name, info, decls):
     if_string = f'\tif (f_name == "{name}") ' + "{\n"
     args = ", ".join([arg["name"] for arg in info["arguments"]])
     for i, arg in enumerate(info["arguments"]):
-        if_string += read_argument_string(i, arg) + "\n"
-    if_string += f"\t    __{name} ({args});"
+        if_string += read_argument_string(i, arg, decls) + "\n"
+    if_string += f"\t    __{name}({args});"
     if_string += "\n\t}\n"
     return if_string
+
+
+# TODO: void, arrays, n-d arrays, structs, and nested structures
