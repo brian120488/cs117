@@ -87,7 +87,7 @@ main(int argc, char *argv[]) {
         printf("Calling sqrt(x,y,z)\n");
         int x[3] = {0,0,0};
         int y[3][2] = { {0, 0}, {0, 0}, {1, 1} };
-        int z[3][2] = { {0, 0}, {2, 0}, {3, 0} };
+        int z[3][2][2] = { {{0, 0}, {0, 1}}, {{2, 0}, {0, 1}}, {{0, 3} , {0, 1}} };
 
         result = sqrt(x, y, z); // remote call (we hope!)
         printf("Returned from sqrt(x, y, z). Result=%d\n",result);

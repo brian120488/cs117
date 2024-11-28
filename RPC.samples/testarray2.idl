@@ -1,2 +1,2 @@
-int sqrt(int x[3], int y[3][2], int z[3][2]);
+int sqrt(int x[3], int y[3][2], int z[3][2][2]);
 

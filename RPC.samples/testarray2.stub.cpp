@@ -70,7 +70,7 @@ void getDataFromStream(char *buffer, unsigned int bufSize);
   
 
 
-void __sqrt(int x[3], int y[3][2], int z[3][2]) {
+void __sqrt(int x[3], int y[3][2], int z[3][2][2]) {
 
   //
   // Time to actually call the function 
@@ -134,26 +134,23 @@ void dispatchFunction() {
     getFunctionNameFromStream(buffer, sizeof(buffer));
     string f_name(buffer);
 
-    char buffer1[4*3];
-    getDataFromStream(buffer1, sizeof(buffer1));
-    int *x = reinterpret_cast<int*>(buffer1);
-
-    char buffer2[4*3*2];
-    getDataFromStream(buffer2, sizeof(buffer2));
-    int (*y)[2] = reinterpret_cast<int(*)[2]>(buffer2);
-
-    char buffer3[4*3*2];
-    getDataFromStream(buffer3, sizeof(buffer3));
-    int (*z)[2] = reinterpret_cast<int(*)[2]>(buffer3);
-
     if (!RPCSTUBSOCKET-> eof()) {
-        if (f_name == "sqrt") { 
+        if (f_name == "sqrt") {
+            char buffer0[sizeof(int) * 3];
+            RPCSTUBSOCKET->read(buffer0, sizeof(int) * 3);
+            int *x = reinterpret_cast<int(*)>(buffer0);
+
+            char buffer1[sizeof(int) * 3 * 2];
+            RPCSTUBSOCKET->read(buffer1, sizeof(int) * 3 * 2);
+            int (*y)[2] = reinterpret_cast<int(*)[2]>(buffer1);
+
+            char buffer2[sizeof(int) * 3 * 2 * 2];
+            RPCSTUBSOCKET->read(buffer2, sizeof(int) * 3 * 2 * 2);
+            int (*z)[2][2] = reinterpret_cast<int(*)[2][2]>(buffer2);
+
             __sqrt(x, y, z);
         }
-        // else
-        //   __badFunction(func.name.c_str());
     }
-
 }
 
  
@@ -167,26 +164,12 @@ void dispatchFunction() {
 //   Important: this routine must leave the sock open but at EOF
 //   when eof is read from client.
 //
-
-
 void getFunctionNameFromStream(char *buffer, unsigned bufSize) {
     char *bufp = buffer;     
-    ssize_t readlen;  
-    for (unsigned i = 0; i < bufSize; i++) {
-        readlen = RPCSTUBSOCKET->read(bufp, 1);
-        if (readlen == 0) break;
-        if (*bufp++ == '\0') break;
-    }
-}
-
-
-
-void getDataFromStream(char *buffer, unsigned int bufSize) {
-    char *bufp = buffer;        
     ssize_t readlen;
     for (unsigned i = 0; i < bufSize; i++) {
         readlen = RPCSTUBSOCKET->read(bufp, 1);
         if (readlen == 0) break;
-        bufp++;
+        if (*bufp++ == '\0') break;
     }
 }

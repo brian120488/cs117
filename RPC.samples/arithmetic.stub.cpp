@@ -59,41 +59,41 @@ void dispatchFunction() {
             __add (x, y);
         }
 
-	if (f_name == "divide") {
-	    char buffer0[sizeof(int)];
-    	    RPCSTUBSOCKET->read(buffer0, sizeof(int));
-    	    int x = *reinterpret_cast<int*>(buffer0);
+        if (f_name == "divide") {
+            char buffer0[sizeof(int)];
+                RPCSTUBSOCKET->read(buffer0, sizeof(int));
+                int x = *reinterpret_cast<int*>(buffer0);
 
-	    char buffer1[sizeof(int)];
-    	    RPCSTUBSOCKET->read(buffer1, sizeof(int));
-    	    int y = *reinterpret_cast<int*>(buffer1);
+            char buffer1[sizeof(int)];
+                RPCSTUBSOCKET->read(buffer1, sizeof(int));
+                int y = *reinterpret_cast<int*>(buffer1);
 
-	    __divide (x, y);
-	}
+            __divide (x, y);
+        }
 
-	if (f_name == "multiply") {
-	    char buffer0[sizeof(int)];
-    	    RPCSTUBSOCKET->read(buffer0, sizeof(int));
-    	    int x = *reinterpret_cast<int*>(buffer0);
+        if (f_name == "multiply") {
+            char buffer0[sizeof(int)];
+                RPCSTUBSOCKET->read(buffer0, sizeof(int));
+                int x = *reinterpret_cast<int*>(buffer0);
 
-	    char buffer1[sizeof(int)];
-    	    RPCSTUBSOCKET->read(buffer1, sizeof(int));
-    	    int y = *reinterpret_cast<int*>(buffer1);
+            char buffer1[sizeof(int)];
+                RPCSTUBSOCKET->read(buffer1, sizeof(int));
+                int y = *reinterpret_cast<int*>(buffer1);
 
-	    __multiply (x, y);
-	}
+            __multiply (x, y);
+        }
 
-	if (f_name == "subtract") {
-	    char buffer0[sizeof(int)];
-    	    RPCSTUBSOCKET->read(buffer0, sizeof(int));
-    	    int x = *reinterpret_cast<int*>(buffer0);
+        if (f_name == "subtract") {
+            char buffer0[sizeof(int)];
+                RPCSTUBSOCKET->read(buffer0, sizeof(int));
+                int x = *reinterpret_cast<int*>(buffer0);
 
-	    char buffer1[sizeof(int)];
-    	    RPCSTUBSOCKET->read(buffer1, sizeof(int));
-    	    int y = *reinterpret_cast<int*>(buffer1);
+            char buffer1[sizeof(int)];
+                RPCSTUBSOCKET->read(buffer1, sizeof(int));
+                int y = *reinterpret_cast<int*>(buffer1);
 
-	    __subtract (x, y);
-	}
+            __subtract (x, y);
+        }
 
     }
 }

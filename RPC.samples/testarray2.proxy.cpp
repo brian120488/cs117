@@ -15,24 +15,20 @@
 using namespace C150NETWORK;  // for all the comp150 utilities 
 using namespace std;
 
-int sqrt(int x[3], int y[3][2], int z[3][2]) {
-     char readBuffer[5];  // to read magic value DONE + null
+int sqrt(int x[3], int y[3][2], int z[3][2][2]) {
+    string name = "sqrt";
+    RPCPROXYSOCKET->write(name.c_str(), name.length() + 1); 
 
-    string arg0 = "sqrt";
-    RPCPROXYSOCKET->write(arg0.c_str(), arg0.length() + 1); 
+    char* arg0 = reinterpret_cast<char*>(x);
+    RPCPROXYSOCKET->write(arg0, sizeof(int) * 3); 
 
-    char* arg1 = reinterpret_cast<char*>(x);
-    RPCPROXYSOCKET->write(arg1, sizeof(int) * 3); 
+    char* arg1 = reinterpret_cast<char*>(y);
+    RPCPROXYSOCKET->write(arg1, sizeof(int) * 3 * 2); 
 
-    char* arg2 = reinterpret_cast<char*>(y);
-    RPCPROXYSOCKET->write(arg2, sizeof(int) * 3 * 2); 
+    char* arg2 = reinterpret_cast<char*>(z);
+    RPCPROXYSOCKET->write(arg2, sizeof(int) * 3 * 2 * 2); 
 
-    char* arg3 = reinterpret_cast<char*>(z);
-    RPCPROXYSOCKET->write(arg3, sizeof(int) * 3 * 2); 
-
-
-    RPCPROXYSOCKET->read(readBuffer, sizeof(readBuffer)); // only legal response is DONE
-    cout << readBuffer << endl;
-
-    return stoi(readBuffer);
+    char readBuffer[sizeof(int)];
+    RPCPROXYSOCKET->read(readBuffer, sizeof(int)); // only legal response is DONE
+    return *reinterpret_cast<int*>(readBuffer);
 }

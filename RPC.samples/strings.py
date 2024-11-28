@@ -11,7 +11,22 @@ def sizeof(arg_type, decls):
     elif type_of_type == "array":
         member_type = decls["types"][arg_type]["member_type"]
         element_count = decls["types"][arg_type]["element_count"]
-        return f"sizeof({member_type}) * {element_count}"
+        member_size = calculate_size(member_type, decls)
+        return f"{member_size} * {element_count}"
+    
+def calculate_size(arg_type, decls):
+    type_info = decls["types"][arg_type]
+    type_of_type = type_info["type_of_type"]
+
+    if type_of_type == "builtin":
+        return f"sizeof({arg_type})"
+    elif type_of_type == "array":
+        member_type = type_info["member_type"]
+        element_count = type_info["element_count"]
+        member_size = calculate_size(member_type, decls)
+        return f"{member_size} * {element_count}"
+    else:
+        raise ValueError(f"Unsupported type_of_type: {type_of_type}")
     
     
 #// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
