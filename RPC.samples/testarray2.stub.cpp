@@ -45,8 +45,6 @@
 
 #include <cstdio>
 #include <cstring>
-#include "c150debug.h"
-#include <stack>
 
 using namespace C150NETWORK;  // for all the comp150 utilities 
 
