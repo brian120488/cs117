@@ -131,9 +131,32 @@ def dispatch_function_string():
     if (!RPCSTUBSOCKET-> eof()) {"""
     
 def get_cast_type(arg_type, decls, placeholder):
-    # TODO: make it work for get_cast_line()
+    type_info = decls["types"][arg_type]
+    type_of_type = type_info["type_of_type"]
 
-def get_cast_line(arg, decls):
+    if type_of_type == "array":
+        member_type = type_info["member_type"]
+        element_count = type_info["element_count"]
+        inner_cast = get_cast_type(member_type, decls, placeholder)
+        return f"{inner_cast}[{element_count}]"
+    else:
+        return placeholder
+
+def get_member_type(arg_type, decls):
+    type_info = decls["types"][arg_type]
+    type_of_type = type_info["type_of_type"]
+
+    if type_of_type == "array":
+        member_type = type_info["member_type"]
+        return get_member_type(member_type, decls)
+    elif type_of_type == "builtin":
+        return arg_type
+    else:
+        raise ValueError(f"Unknown type_of_type: {type_of_type}")
+
+
+def get_cast_line(arg, decls, i):
+    arg_name = arg["name"]
     arg_type = arg["type"]
     types = decls["types"]
     type_of_type = types[arg_type]["type_of_type"]
@@ -141,13 +164,13 @@ def get_cast_line(arg, decls):
         return f"{arg_type} {arg_name} = *reinterpret_cast<{arg_type}*>(buffer{i});"
     elif type_of_type == "array":
         member_type = types[arg_type]["member_type"]
-        element_count = types[arg_type]["element_count"]
         if types[member_type]["type_of_type"] == "builtin":
             return f"{member_type} *{arg_name} = reinterpret_cast<{member_type}(*)>(buffer{i});"
         
-        lhs = get_cast_type(member_type, decls, f"*{arg_name}")
-        cast_type = get_cast_type(member_type, decls, "*")
-        return f"{lhs} = reinterpret_cast<{cast_type}>(buffer{i});"
+        lhs = get_cast_type(member_type, decls, f"(*{arg_name})")
+        cast_type = get_cast_type(member_type, decls, "(*)")
+        arg_type = get_member_type(member_type, decls)
+        return f"{arg_type} {lhs} = reinterpret_cast<{arg_type}{cast_type}>(buffer{i});"
             
     
 def read_argument_string(i, arg, decls):
@@ -163,9 +186,7 @@ def read_argument_string(i, arg, decls):
     if type_of_type == "builtin":
         cast_line = f"{arg_type} {arg_name} = *reinterpret_cast<{arg_type}*>(buffer{i});"
     elif type_of_type == "array":
-        member_type = types[arg_type]["member_type"]
-        element_count = types[arg_type]["element_count"]
-        cast_line = f"{member_type} *{arg_name} = reinterpret_cast<{member_type}(*)>(buffer{i});"
+        cast_line = get_cast_line(arg, decls, i)
     return f"\t    {declare_line}\n\t    {read_line}\n\t    {cast_line}\n"
 
 def dispatch_if_string(name, info, decls):
