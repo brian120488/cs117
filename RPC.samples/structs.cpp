@@ -1,6 +1,8 @@
+#include <string>
+using namespace std;
+
 #include "structs.idl"
 #include "stdlib.h"
-
 
 Person findPerson(ThreePeople tp) {
     return tp.p1;
