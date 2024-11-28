@@ -100,14 +100,8 @@ def stub_function_header_string(name, info, decls):
     for arg in info["arguments"]:
         arg_name = arg["name"]
         arg_type = arg["type"]
-        types = decls["types"]
-        type_of_type = types[arg_type]["type_of_type"]
-        if type_of_type == "builtin":
-            header_args.append(f"{arg_type} {arg_name}")
-        elif type_of_type == "array":
-            member_type = types[arg_type]["member_type"]
-            element_count = types[arg_type]["element_count"]
-            header_args.append(f"{member_type} {arg_name}[{element_count}]")
+        param = get_param(arg_name, arg_type, decls)
+        header_args.append(param)
         
     header_args = ", ".join(header_args)
     return f"void __{name}({header_args})" + " {"
