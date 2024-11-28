@@ -9,8 +9,6 @@
 
 #include <cstdio>
 #include <cstring>
-#include <sstream>
-#include "c150debug.h"
 
 using namespace C150NETWORK;  // for all the comp150 utilities 
 using namespace std;

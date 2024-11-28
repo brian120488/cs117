@@ -71,64 +71,12 @@ void getDataFromStream(char *buffer, unsigned int bufSize);
 
 
 void __sqrt(int x[3], int y[3][2], int z[3][2][2]) {
-
-  //
-  // Time to actually call the function 
-  //
-  c150debug->printf(C150RPCDEBUG,"testarray1.stub.cpp: invoking sqrt()");
-  cout << "Sqrting...\n";
-  int output = sqrt(x, y, z);
-  cout << "OUTPUT: " << output << endl;
-
-  //
-  // Send the response to the client
-  //
-  // If func1 returned something other than void, this is
-  // where we'd send the return value back.
-  //
-  // c150debug->printf(C150RPCDEBUG,"simplefunction.stub.cpp: returned from  func1() -- responding to client");
-  // RPCSTUBSOCKET->write(doneBuffer, strlen(doneBuffer)+1);
-
-  char outputBuffer[50]; // Buffer to hold the output string
-  snprintf(outputBuffer, sizeof(outputBuffer), "%d", output); // Convert output to string
-
-  c150debug->printf(C150RPCDEBUG,"testarray1.stub.cpp: returned from sqrt() -- responding to client");
-  RPCSTUBSOCKET->write(outputBuffer, strlen(outputBuffer)+1);
+    int output = sqrt(x, y, z);
+    char *outputBuffer = reinterpret_cast<char*>(&output);
+    RPCSTUBSOCKET->write(outputBuffer, sizeof(int));
 }
 
 
-//
-//     __badFunction
-//
-//   Pseudo-stub for missing functions.
-//
-
-// void __badFunction(char *functionName) {
-//   char doneBuffer[5] = "BAD";  // to write magic value DONE + null
-
-
-//   //
-//   // Send the response to the client indicating bad function
-//   //
-
-//   c150debug->printf(C150RPCDEBUG,"simplefunction.stub.cpp: received call for nonexistent function %s()",functionName);
-//   RPCSTUBSOCKET->write(doneBuffer, strlen(doneBuffer)+1);
-// }
-
-
-
-// ======================================================================
-//
-//                        COMMON SUPPORT FUNCTIONS
-//
-// ======================================================================
-
-
-//
-//                         dispatchFunction()
-//
-//   Called when we're ready to read a new invocation request from the stream
-//
 void dispatchFunction() {
     char buffer[50];
     getFunctionNameFromStream(buffer, sizeof(buffer));
@@ -153,17 +101,7 @@ void dispatchFunction() {
     }
 }
 
- 
-//
-//                   getFunctionNamefromStream
-//
-//   Helper routine to read function name from the stream. 
-//   Note that this code is the same for all stubs, so can be generated
-//   as boilerplate.
-//
-//   Important: this routine must leave the sock open but at EOF
-//   when eof is read from client.
-//
+
 void getFunctionNameFromStream(char *buffer, unsigned bufSize) {
     char *bufp = buffer;     
     ssize_t readlen;

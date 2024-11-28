@@ -130,6 +130,26 @@ def dispatch_function_string():
 
     if (!RPCSTUBSOCKET-> eof()) {"""
     
+def get_cast_type(arg_type, decls, placeholder):
+    # TODO: make it work for get_cast_line()
+
+def get_cast_line(arg, decls):
+    arg_type = arg["type"]
+    types = decls["types"]
+    type_of_type = types[arg_type]["type_of_type"]
+    if type_of_type == "builtin":
+        return f"{arg_type} {arg_name} = *reinterpret_cast<{arg_type}*>(buffer{i});"
+    elif type_of_type == "array":
+        member_type = types[arg_type]["member_type"]
+        element_count = types[arg_type]["element_count"]
+        if types[member_type]["type_of_type"] == "builtin":
+            return f"{member_type} *{arg_name} = reinterpret_cast<{member_type}(*)>(buffer{i});"
+        
+        lhs = get_cast_type(member_type, decls, f"*{arg_name}")
+        cast_type = get_cast_type(member_type, decls, "*")
+        return f"{lhs} = reinterpret_cast<{cast_type}>(buffer{i});"
+            
+    
 def read_argument_string(i, arg, decls):
     arg_name = arg["name"]
     arg_type = arg["type"]
