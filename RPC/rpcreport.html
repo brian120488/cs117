@@ -1,0 +1,250 @@
+<!DOCTYPE HTML>
+<!-- 
+ **********************************************************
+
+             TUFTS CS 117 HOMEWORK ASSIGNMENT
+
+        Fill in your name, e-mail and answers to questions
+        in the sections provided below.
+
+          All questions are marked up: <li class="q">
+          All answers are marked up:   <li class="a">
+
+
+     PLEASE DO NOT MODIFY ANY THING OTHER THAN THE 
+     NAME, E-MAIL, AND ANSWER FIELDS (you may also add
+     css declarations in the <head> if you need them,
+     but usually you won't.
+
+ **********************************************************
+ -->
+
+
+<html lang="en">
+<head>
+<meta charset="utf-8"> 
+<title>Tufts CS 117 Assignment &#8212; Remote Procedure Call Project Report</title>
+<link rel="stylesheet" type="text/css" href="https://www.cs.tufts.edu/comp/117/style/homework.css" >
+<meta name="robots" content="noindex, nofollow" >
+</head>
+
+<body class="homework">
+
+
+<!-- ******************************************************
+	   YOU MUST FILL IN YOUR NAME, UTLN AND EMAIL BELOW!!
+         (You may copy this from an earlier assignment
+                         if you like)
+
+     ****************************************************** -->
+
+
+<div class="student">
+<p>
+<span class="label">Student1 name: </span>
+Brian Yang
+<br>
+
+<span class="label">UTLN: </span>
+byang05
+<br>
+
+<span class="label">E-mail: </span>
+<!-- DON'T FORGET UP UPDATE THE MAILTO: URI BELOW ALONG WITH
+     YOUR EMAIL IN THE ANCHOR.  IT SHOULD LOOK LIKE:
+ <a href="mailto:lady.gaga@cs.tufts.edu">lady.gaga@cs.tufts.edu</a>
+--> 
+
+<a href="mailto:brian.yang@tufts.edu">brian.yang@tufts.edu</a>
+<br>
+<br>
+<br>
+<span class="label">Student2 name: </span>
+Manuel Pena
+<br>
+<span class="label">UTLN: </span>
+mpena09
+<br>
+
+<span class="label">E-mail: </span>
+<!-- DON'T FORGET UP UPDATE THE MAILTO: URI BELOW ALONG WITH
+     YOUR EMAIL IN THE ANCHOR.  IT SHOULD LOOK LIKE:
+ <a href="mailto:lady.gaga@cs.tufts.edu">lady.gaga@cs.tufts.edu</a>
+--> 
+
+<a href="mailto:manuel.pena654576@tufts.edu">manuel.pena654576@tufts.edu</a>
+
+<br>
+</p>
+</div>
+
+
+
+
+<div class="UpperLeftHeader">
+<p>Tufts CS 117 (Fall 2024):
+<br>
+Internet-scale Distributed Systems
+</p>
+</div>
+
+
+<!-- - - - - - - - - - - - - - - - - - - - - - - -
+		HOMEWORK TITLE
+  - -  - - - - - - - - - - - - - - - - - - - - - - -->
+
+
+<div class="headerdiv">
+<h1>
+Tufts CS 117:<br>
+RPC Project Report
+</h1>
+</div>
+
+<!-- ******************************************************
+
+              PLEASE ANSWER QUESTIONS IN THE SECTIONS
+	      LABELED class="a" (for answer)
+
+     ****************************************************** -->
+
+
+
+
+<div class="main">
+
+<h2 id="questions">Questions</h2>
+<!-- - - - - - - - - - - - - - - - - - - - - - - -
+		QUESTION
+  - -  - - - - - - - - - - - - - - - - - - - - - - -->
+<div class="qa">
+
+<ol class="qa">
+<li class="q">Did you implement an rpcgenerate program and does it handle all legal IDL files? If not, which test cases should we try in your submission  directory?</li>
+<li class="a">
+    Yes, we have tested thoroughly with different combinations of structs, arrays, strings, etc. and we are confident that it will work for basic data types and for more complex data types.
+
+</li>
+
+<li class="q">What programming language did you use for your rpcgenerate program?</li>
+<li class="a">
+Put an X in the space next to your choice:
+<ul>
+  <li>_____ C++ (using the provided type framework)</li>
+  <li>__X__ Python (using the provided <code>idl_to_json</code>)</li>
+  <li>_____ Ruby (using the provided <code>idl_to_json</code>)</li>
+</ul>
+</li>
+
+<li class="q">Briefly explain the protocol you use over TCP to request function calls and return the results.</li>
+<li class="a">
+     <p>
+          For both proxies and stubs, we create helper functions that can easily send and receive 
+          <code>ints</code>, <code>floats</code>, and <code>strings</code>. The <code>int</code> and 
+          <code>float</code> functions work across machines that handle different endianness by having 
+          their representation change to a network byte order during the TCP transmission.
+      </p>
+  
+      <p>
+          For <code>strings</code>, we first send an <code>int</code> representing the length of the string 
+          before we send the string itself in case the string intentionally has a <code>'\0'</code> in it.
+      </p>
+  
+      <h2>Proxy Protocol</h2>
+      <ol>
+          <li>Send the string of the function name to the stub.</li>
+          <li>
+              Send arguments:
+              <ul>
+                  <li>
+                      As any valid IDL data type can be represented as a collection of 
+                      <code>ints</code>, <code>floats</code>, and <code>strings</code>, 
+                      deconstruct each argument by recursively iterating (Depth First Search) 
+                      over its attributes.
+                  </li>
+                  <li>Send the collection of <code>ints</code>, <code>floats</code>, and <code>strings</code>.</li>
+              </ul>
+          </li>
+          <li>Receive output from the stub (which may also be a collection of <code>ints</code>, <code>floats</code>, and <code>strings</code>).</li>
+          <li>Reconstruct output.</li>
+          <li>Return output.</li>
+      </ol>
+  
+      <h2>Stub Protocol</h2>
+      <ol>
+          <li>Receive the string of the function name sent by the proxy.</li>
+          <li>
+              According to the arguments required by the given function, read expected data from the proxy,
+              which is a collection of <code>ints</code>, <code>floats</code>, and <code>strings</code>, 
+              and then reconstruct argument(s):
+              <ul>
+                  <li>Reconstruct each argument by running DFS over its attributes.</li>
+                  <li>Read each primitive type of the argument using its respective reading helper function.</li>
+                  <li>
+                      Once we receive all its components, create an instance of the argument 
+                      and add its primitive data types.
+                  </li>
+              </ul>
+          </li>
+          <li>Call the function with the given reconstructed arguments.</li>
+          <li>Deconstruct the output of the function and send them to the proxy.</li>
+          <li>Await further commands.</li>
+      </ol>
+  
+      <h2>Example: Constructing and Deconstructing Structs</h2>
+      <p>
+          For example, if we have a struct:
+      </p>
+      <pre>
+          struct ThreePeople {
+              Person p1;
+              Person p2;
+              Person p3;
+          }
+          struct Person {
+              string firstname;
+              string lastname;
+              int age;
+          }
+      </pre>
+      <p>We deconstruct the struct <code>ThreePeople</code> and then deconstruct each struct <code>Person</code>:</p>
+      <h3>Deconstruct</h3>
+      <ol>
+          <li>Send <code>p1.firstname</code>, <code>p1.lastname</code>, <code>p1.age</code>.</li>
+          <li>Send <code>p2.firstname</code>, <code>p2.lastname</code>, <code>p2.age</code>.</li>
+          <li>Send <code>p3.firstname</code>, <code>p3.lastname</code>, <code>p3.age</code>.</li>
+      </ol>
+      <h3>Reconstruct in Stub</h3>
+      <ol>
+          <li>Receive data in order.</li>
+          <li>Create instances for <code>p1</code>, <code>p2</code>, and <code>p3</code>.</li>
+          <li>Combine into the <code>ThreePeople</code> struct.</li>
+      </ol>
+      <p>The same idea is applied for arrays and combinations like structs of arrays or arrays of structs.</p>
+</li>
+
+<li class="q">Did you get help from anyone other than your teammate? If "yes", then briefly explain who helped you and how.</li>
+<li class="a">
+    We discussed edge cases and possible strategies for implementing RPC with David and Sam, adhering to the project's collaboration policy.
+</li>
+
+
+<li class="q">(optional) Do you have any other comments on this assignment (e.g. was it worthwhile, what did you learn from it, do you have suggestions for improvment if the course is offered again)?</li>
+<li class="a">
+   n/a
+</li>
+
+</ol>
+
+<!-- * * * * * * * * * * * * * * * * * * * * * -->
+<!--         ADDITIONAL INFORMATION            -->
+<!-- * * * * * * * * * * * * * * * * * * * * * -->
+
+<h2 id="reportbody">ADDITIONAL INFORMATION</h2>
+
+<p>n.a</p>
+
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,74 @@
+11/18/2024 16:04:48.936996 ./testarray2server: rpcstubinitialize: Creating C150StreamSocket
+11/18/2024 16:04:48.938704 ./testarray2server: rpcserver.cpp:calling C150StreamSocket::accept
+11/18/2024 16:04:53.905500 ./testarray2server: C150StreamSocket::read: successful read with len=1 |s|
+11/18/2024 16:04:53.905522 ./testarray2server: C150StreamSocket::read: successful read with len=1 |q|
+11/18/2024 16:04:53.905541 ./testarray2server: C150StreamSocket::read: successful read with len=1 |r|
+11/18/2024 16:04:53.905559 ./testarray2server: C150StreamSocket::read: successful read with len=1 |t|
+11/18/2024 16:04:53.905578 ./testarray2server: C150StreamSocket::read: successful read with len=1 |.|
+11/18/2024 16:04:53.905597 ./testarray2server: C150StreamSocket::read: successful read with len=1 |.|
+11/18/2024 16:04:53.905616 ./testarray2server: C150StreamSocket::read: successful read with len=1 |.|
+11/18/2024 16:04:53.905635 ./testarray2server: C150StreamSocket::read: successful read with len=1 |.|
+11/18/2024 16:04:53.905653 ./testarray2server: C150StreamSocket::read: successful read with len=1 |.|
+11/18/2024 16:04:53.905672 ./testarray2server: C150StreamSocket::read: successful read with len=1 |.|
+11/18/2024 16:04:53.905690 ./testarray2server: C150StreamSocket::read: successful read with len=1 |.|
+11/18/2024 16:04:53.905709 ./testarray2server: C150StreamSocket::read: successful read with len=1 |.|
+11/18/2024 16:04:53.905727 ./testarray2server: C150StreamSocket::read: successful read with len=1 |.|
+11/18/2024 16:04:53.905746 ./testarray2server: C150StreamSocket::read: successful read with len=1 |.|
+11/18/2024 16:04:53.905764 ./testarray2server: C150StreamSocket::read: successful read with len=1 |.|
+11/18/2024 16:04:53.905783 ./testarray2server: C150StreamSocket::read: successful read with len=1 |.|
+11/18/2024 16:04:53.905802 ./testarray2server: C150StreamSocket::read: successful read with len=1 |.|
+11/18/2024 16:04:53.905820 ./testarray2server: C150StreamSocket::read: successful read with len=1 |.|
+11/18/2024 16:04:53.905839 ./testarray2server: C150StreamSocket::read: successful read with len=1 |.|
+11/18/2024 16:04:53.905857 ./testarray2server: C150StreamSocket::read: successful read with len=1 |.|
+11/18/2024 16:04:53.905876 ./testarray2server: C150StreamSocket::read: successful read with len=1 |.|
+11/18/2024 16:04:53.905894 ./testarray2server: C150StreamSocket::read: successful read with len=1 |.|
+11/18/2024 16:04:53.905913 ./testarray2server: C150StreamSocket::read: successful read with len=1 |.|
+11/18/2024 16:04:53.905931 ./testarray2server: C150StreamSocket::read: successful read with len=1 |.|
+11/18/2024 16:04:53.905950 ./testarray2server: C150StreamSocket::read: successful read with len=1 |.|
+11/18/2024 16:04:53.905968 ./testarray2server: C150StreamSocket::read: successful read with len=1 |.|
+11/18/2024 16:04:53.905987 ./testarray2server: C150StreamSocket::read: successful read with len=1 |.|
+11/18/2024 16:04:53.906006 ./testarray2server: C150StreamSocket::read: successful read with len=1 |.|
+11/18/2024 16:04:53.906024 ./testarray2server: C150StreamSocket::read: successful read with len=1 |.|
+11/18/2024 16:04:53.906052 ./testarray2server: C150StreamSocket::read: successful read with len=1 |.|
+11/18/2024 16:04:53.906071 ./testarray2server: C150StreamSocket::read: successful read with len=1 |.|
+11/18/2024 16:04:53.906090 ./testarray2server: C150StreamSocket::read: successful read with len=1 |.|
+11/18/2024 16:04:53.906108 ./testarray2server: C150StreamSocket::read: successful read with len=1 |.|
+11/18/2024 16:04:53.906127 ./testarray2server: C150StreamSocket::read: successful read with len=1 |.|
+11/18/2024 16:04:53.906145 ./testarray2server: C150StreamSocket::read: successful read with len=1 |.|
+11/18/2024 16:04:53.906164 ./testarray2server: C150StreamSocket::read: successful read with len=1 |.|
+11/18/2024 16:04:53.906182 ./testarray2server: C150StreamSocket::read: successful read with len=1 |.|
+11/18/2024 16:04:53.906200 ./testarray2server: C150StreamSocket::read: successful read with len=1 |.|
+11/18/2024 16:04:53.906219 ./testarray2server: C150StreamSocket::read: successful read with len=1 |.|
+11/18/2024 16:04:53.906254 ./testarray2server: C150StreamSocket::read: successful read with len=1 |.|
+11/18/2024 16:04:53.906273 ./testarray2server: C150StreamSocket::read: successful read with len=1 |.|
+11/18/2024 16:04:53.906292 ./testarray2server: C150StreamSocket::read: successful read with len=1 |.|
+11/18/2024 16:04:53.906311 ./testarray2server: C150StreamSocket::read: successful read with len=1 |.|
+11/18/2024 16:04:53.906329 ./testarray2server: C150StreamSocket::read: successful read with len=1 |.|
+11/18/2024 16:04:53.906348 ./testarray2server: C150StreamSocket::read: successful read with len=1 |.|
+11/18/2024 16:04:53.906366 ./testarray2server: C150StreamSocket::read: successful read with len=1 |.|
+11/18/2024 16:04:53.906385 ./testarray2server: C150StreamSocket::read: successful read with len=1 |.|
+11/18/2024 16:04:53.906404 ./testarray2server: C150StreamSocket::read: successful read with len=1 |.|
+11/18/2024 16:04:53.906422 ./testarray2server: C150StreamSocket::read: successful read with len=1 |.|
+11/18/2024 16:04:53.906441 ./testarray2server: C150StreamSocket::read: successful read with len=1 |.|
+11/18/2024 16:04:53.906459 ./testarray2server: C150StreamSocket::read: successful read with len=1 |.|
+11/18/2024 16:04:53.906478 ./testarray2server: C150StreamSocket::read: successful read with len=1 |.|
+11/18/2024 16:04:53.906497 ./testarray2server: C150StreamSocket::read: successful read with len=1 |.|
+11/18/2024 16:04:53.906515 ./testarray2server: C150StreamSocket::read: successful read with len=1 |.|
+11/18/2024 16:04:53.906534 ./testarray2server: C150StreamSocket::read: successful read with len=1 |.|
+11/18/2024 16:04:53.906553 ./testarray2server: C150StreamSocket::read: successful read with len=1 |.|
+11/18/2024 16:04:53.906571 ./testarray2server: C150StreamSocket::read: successful read with len=1 |.|
+11/18/2024 16:04:53.906590 ./testarray2server: C150StreamSocket::read: successful read with len=1 |.|
+11/18/2024 16:04:53.906608 ./testarray2server: C150StreamSocket::read: successful read with len=1 |.|
+11/18/2024 16:04:53.906627 ./testarray2server: C150StreamSocket::read: successful read with len=1 |.|
+11/18/2024 16:04:53.906646 ./testarray2server: C150StreamSocket::read: successful read with len=1 |.|
+11/18/2024 16:04:53.906664 ./testarray2server: C150StreamSocket::read: successful read with len=1 |.|
+11/18/2024 16:04:53.906683 ./testarray2server: C150StreamSocket::read: successful read with len=1 |.|
+11/18/2024 16:04:53.906702 ./testarray2server: C150StreamSocket::read: successful read with len=1 |.|
+11/18/2024 16:04:53.906721 ./testarray2server: C150StreamSocket::read: successful read with len=1 |.|
+11/18/2024 16:04:53.906739 ./testarray2server: testarray1.stub.cpp: invoking sqrt()
+11/18/2024 16:04:53.906792 ./testarray2server: testarray1.stub.cpp: returned from sqrt() -- responding to client
+11/18/2024 16:04:53.906816 ./testarray2server: C150StreamSocket::write: attempting to send packet with len=2 |7.|
+11/18/2024 16:04:53.906866 ./testarray2server: C150StreamSocket::write: Success writing packet with len=2 |7.|
+11/18/2024 16:04:53.910999 ./testarray2server: rpcserver.cpp: EOF signaled on input
+11/18/2024 16:04:53.911017 ./testarray2server: Calling C150StreamSocket::close
+11/18/2024 16:04:53.911073 ./testarray2server: rpcserver.cpp:calling C150StreamSocket::accept
